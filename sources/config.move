@@ -1,27 +1,26 @@
 module e4c::config {
-    use sui::coin::TreasuryCap;
     use sui::object;
     use sui::object::UID;
     use sui::transfer;
     use sui::tx_context::TxContext;
     use sui::vec_map;
     use sui::vec_map::VecMap;
-
-    use e4c::e4c::E4C;
-
+    
+    use e4c::e4c::InventoryCap;
+    
     /// === Errors ===
     const EIncorrectBasisPoints: u64 = 0;
     const EStakingTimeMissing: u64 = 1;
     const EStakingTimeConflict: u64 = 2;
     const EStakingQuantityRangeUnmatch: u64 = 3;
-
+    
     /// === Constants ===
     const MAX_U64: u64 = 18446744073709551615;
     const MAX_BPS: u16 = 10_000;
-
-
+    
+    
     /// === Structs ===
-
+    
     struct StakingDetails has store {
         /// staking time in days
         staking_time: u64,
@@ -31,14 +30,14 @@ module e4c::config {
         staking_quantity_range_min: u64,
         staking_quantity_range_max: u64,
     }
-
+    
     /// [Shared Object]: StakingConfig is a configuration for staking
     struct StakingConfig has key, store {
         id: UID,
         /// staking time in days -> staking details
         staking_details: VecMap<u64, StakingDetails>,
     }
-
+    
     fun init(ctx: &mut TxContext) {
         let config = StakingConfig {
             id: object::new(ctx),
@@ -64,16 +63,16 @@ module e4c::config {
         });
         transfer::public_share_object(config);
     }
-
+    
     /// https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
     public fun get_staking_details(config: &StakingConfig, staking_time: u64): &StakingDetails {
         let index = vec_map::get_idx(&config.staking_details, &staking_time);
         let (_, details) = vec_map::get_entry_by_idx(&config.staking_details, index);
         details
     }
-
+    
     public(friend) fun add_staking_detail(
-        _: &TreasuryCap<E4C>,
+        _: &InventoryCap,
         config: &mut StakingConfig,
         staking_time: u64,
         annualized_interest_rate_bp: u16,
@@ -85,7 +84,7 @@ module e4c::config {
         assert!(vec_map::contains(&config.staking_details, &staking_time) == false, EStakingTimeConflict);
         assert!(staking_quantity_range_min < staking_quantity_range_max, EStakingQuantityRangeUnmatch);
         /// TODO: add other validation like nothing conflict with existing staking details
-
+        
         vec_map::insert(&mut config.staking_details, staking_time, StakingDetails {
             staking_time,
             annualized_interest_rate_bp,
@@ -94,9 +93,9 @@ module e4c::config {
         });
         /// TODO: add event
     }
-
+    
     public(friend) fun remove_staking_detail(
-        _: &TreasuryCap<E4C>,
+        _: &InventoryCap,
         config: &mut StakingConfig,
         staking_time: u64
     ): StakingDetails {
@@ -104,9 +103,9 @@ module e4c::config {
         config
         /// TODO: add event
     }
-
+    
     /// === Public-View Functions ===
-
+    
     public fun reward(
         config: &StakingConfig,
         staking_time: u64,
@@ -120,19 +119,19 @@ module e4c::config {
         let reward = (interest_rate * staking_time / 360 * staking_quantity) + staking_quantity;
         reward
     }
-
+    
     public fun staking_quantity_range(
         detail: &StakingDetails,
     ): (u64, u64) {
         (detail.staking_quantity_range_min, detail.staking_quantity_range_max)
     }
-
+    
     public fun annualized_interest_rate_bp(
         detail: &StakingDetails,
     ): u16 {
         detail.annualized_interest_rate_bp
     }
-
+    
     public fun staking_time_end(
         staking_time: u64,
         timestamp: u64

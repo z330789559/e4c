@@ -3,7 +3,7 @@ module e4c::staking {
     use sui::balance::Balance;
     use sui::clock;
     use sui::clock::Clock;
-    use sui::coin::{Self, Coin, TreasuryCap};
+    use sui::coin::{Self, Coin};
     use sui::event;
     use sui::object;
     use sui::object::{ID, UID};
@@ -18,17 +18,19 @@ module e4c::staking {
         staking_time_end,
         StakingConfig
     };
-    use e4c::e4c::E4C;
+    use e4c::e4c::{E4C, Inventory, take_by_friend};
     
     /// === Errors ===
     const EStakingQuantityTooLow: u64 = 0;
     const EStakingQuantityTooHigh: u64 = 1;
     const EStakingTimeNotEnded: u64 = 2;
-    const EStakingPoolNotEmptied: u64 = 3;
-    const EInvalidStakingPoolOwner: u64 = 4;
+    const EStakingPoolEmptied: u64 = 3;
+    const EStakingPoolShouldBeEmptied: u64 = 4;
+    const EInvalidStakingPoolOwner: u64 = 5;
     
     /// [Shared Object]: StakingPool represents a pool of staked tokens.
     /// The pool will be created by a user and will have a reward rate that will be used to calculate the rewards for the stakers.
+    /// Once it's created, you can only unstake the tokens when the staking time is ended.
     struct StakingPool has key {
         id: UID,
         /// Address of the pool owner
@@ -41,8 +43,11 @@ module e4c::staking {
         applied_staking_time: u64,
         /// Interest rate applied to the staked tokens
         applied_interest_rate_bp: u16,
-        /// Expected amount of rewards
-        expected_reward: u64,
+        /// Amount of rewards available for the stakers
+        /// The rewards are calculated based on the staking time and the staked amount
+        /// The amount is fixed when the pool is created so put the rewards in the pool at the creation time
+        /// To avoid that the inventory are empty when the rewards are claimed
+        reward: Balance<E4C>,
     }
     
     /// Event emitted when a new staking pool is created
@@ -64,8 +69,11 @@ module e4c::staking {
         pool_id: ID,
     }
     
+    /// TODO: The number of E4C tokens locked for exchange should be unlocked immediately.
+    ///     The number to be unlocked is equal to the number of tokens try to be staked.
     public fun new_staking_pool(
         config: &StakingConfig,
+        inventory: &mut Inventory,
         stake: Coin<E4C>,
         staking_time: u64,
         clock: &Clock,
@@ -77,7 +85,7 @@ module e4c::staking {
         assert!(amount >= min, EStakingQuantityTooLow);
         assert!(amount <= max, EStakingQuantityTooHigh);
         
-        let expected_reward = reward(config, staking_time, amount);
+        let reward = reward(config, staking_time, amount);
         let id = object::new(ctx);
         
         event::emit(Staked {
@@ -92,13 +100,12 @@ module e4c::staking {
             staked_at: clock::timestamp_ms(clock),
             applied_staking_time: staking_time,
             applied_interest_rate_bp: annualized_interest_rate_bp(detail),
-            expected_reward
+            reward: coin::into_balance(take_by_friend(inventory, reward, ctx))
         };
         transfer::share_object(pool);
     }
     
     public fun unstake(
-        treasury_cap: &mut TreasuryCap<E4C>,
         pool: &mut StakingPool,
         clock: &Clock,
         ctx: &mut TxContext
@@ -107,18 +114,21 @@ module e4c::staking {
             staking_time_end(pool.applied_staking_time, pool.staked_at) <= clock::timestamp_ms(clock),
             EStakingTimeNotEnded
         );
-        let amount = balance::value(&pool.amount_staked);
-        assert!(amount > 0, EStakingPoolNotEmptied);
-        let coin = coin::take(&mut pool.amount_staked, amount, ctx);
-        let reward = coin::mint(treasury_cap, pool.expected_reward - amount, ctx);
+        let (staked, reward) = (balance::value(&pool.amount_staked), balance::value(&pool.reward));
+        assert!(staked > 0 && reward > 0, EStakingPoolEmptied);
+        let (staked_coin, reward_coin) = (coin::take(&mut pool.amount_staked, staked, ctx), coin::take(
+            &mut pool.reward,
+            staked,
+            ctx
+        ));
         
         event::emit(Unstaked {
             pool_id: object::uid_to_inner(&pool.id),
             owner: sender(ctx),
-            amount
+            amount: staked
         });
-        coin::join(&mut coin, reward);
-        coin
+        coin::join(&mut staked_coin, reward_coin);
+        staked_coin
     }
     
     public fun destroy_staking_pool(
@@ -126,17 +136,18 @@ module e4c::staking {
         ctx: &mut TxContext
     ) {
         assert!(pool.owner == sender(ctx), EInvalidStakingPoolOwner);
-        assert!(balance::value(&pool.amount_staked) == 0, EStakingPoolNotEmptied);
+        assert!(balance::value(&pool.amount_staked) == 0, EStakingPoolShouldBeEmptied);
         let StakingPool {
             id,
             owner: _,
-            amount_staked: balance,
+            amount_staked: balance_staked,
             staked_at: _,
             applied_staking_time: _,
             applied_interest_rate_bp: _,
-            expected_reward: _
+            reward: balance_reward,
         } = pool;
-        balance::destroy_zero(balance);
+        balance::destroy_zero(balance_staked);
+        balance::destroy_zero(balance_reward);
         event::emit(PoolDestroyed {
             pool_id: object::uid_to_inner(&id)
         });
