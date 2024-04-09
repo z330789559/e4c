@@ -37,7 +37,7 @@ sequenceDiagram
     staking -->> staking: 10 days lockup
     Note over staking: staking $E4C token can shorten the locking period
     alt is user staking
-        Staking ->> U: transfer the staked amount of $E4C in locked state immediately
+        staking ->> U: transfer the staked amount of $E4C in locked state immediately
     end
     U ->> exchange: request to unlock $E4C
     exchange ->> staking: unlock $E4C
@@ -55,8 +55,11 @@ sequenceDiagram
     actor U as User
     participant e4c
     participant staking
+    participant config
     U ->> staking: request to stake $E4C
     staking ->> staking: create a new staking pool
+    staking ->> config: get staking pool configuration
+    config ->> staking: return staking rate and expected reward
     staking ->> e4c: claim $E4C reward from inventory
     e4c ->> staking: Inject $E4C reward to staking pool
     staking -->> staking: wait for staking days
@@ -70,3 +73,13 @@ sequenceDiagram
 
 ### Configure Staking Pool
 
+The following sequence diagram illustrates the process of configuring the staking pool.
+
+```mermaid
+sequenceDiagram
+    actor A as Ambrus
+    participant config
+    A ->> config: add/remove configure staking pool
+    config ->> config: set staking pool configuration
+    Note over config: the update does not affect existing staking pool
+```
