@@ -106,6 +106,7 @@ module e4c::config {
     
     /// === Public-View Functions ===
     
+    /// TODO: Cosider to move to "staking" module
     public fun reward(
         config: &StakingConfig,
         staking_time: u64,
@@ -115,8 +116,7 @@ module e4c::config {
         /// Formula: reward = (N * T / 360 * amountE4C) + amountE4C
         /// N = annualized interest rate in basis points
         /// T = staking time in days
-        let interest_rate = (((detail.annualized_interest_rate_bp as u128) / 10_000) as u64);
-        let reward = (interest_rate * staking_time / 360 * staking_quantity) + staking_quantity;
+        let reward = (((detail.annualized_interest_rate_bp as u64) * staking_time / 360) * staking_quantity + staking_quantity) / 1000;
         reward
     }
     
@@ -137,5 +137,32 @@ module e4c::config {
         timestamp: u64
     ): u64 {
         timestamp + staking_time * 24 * 60 * 60 * 1000
+    }
+    
+    #[test_only]
+    public fun new_staking_details(
+        staking_time: u64,
+        annualized_interest_rate_bp: u16,
+        staking_quantity_range_min: u64,
+        staking_quantity_range_max: u64
+    ): StakingDetails {
+        StakingDetails {
+            staking_time,
+            annualized_interest_rate_bp,
+            staking_quantity_range_min,
+            staking_quantity_range_max,
+        }
+    }
+    
+    #[test_only]
+    public fun new_staking_config(
+        details: StakingDetails, staking_time: u64, ctx: &mut TxContext
+    ): StakingConfig {
+        let config = StakingConfig {
+            id: object::new(ctx),
+            staking_details: vec_map::empty(),
+        };
+        vec_map::insert(&mut config.staking_details, staking_time, details);
+        config
     }
 }
