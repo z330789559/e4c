@@ -33,6 +33,7 @@ module e4c::staking {
     /// Once it's created, you can only unstake the tokens when the staking time is ended.
     struct StakingPool has key {
         id: UID,
+        /// TODO: Consider to use key object when claiming instead of seeing the match of the owner
         /// Address of the pool owner
         owner: address,
         /// Amount of tokens staked in the pool
