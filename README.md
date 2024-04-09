@@ -13,6 +13,7 @@ The following sequence diagram illustrates the process of publishing a package a
 ```mermaid
 sequenceDiagram
     actor A as Ambrus
+    Note over A: Ambrus account could be a multisig wallet
     participant e4c as e4c package
     A ->> e4c: publish package
     e4c ->> e4c: create $E4C
@@ -61,14 +62,31 @@ sequenceDiagram
     staking ->> config: get staking pool configuration
     config ->> staking: return staking rate and expected reward
     staking ->> e4c: claim $E4C reward from inventory
-    e4c ->> staking: Inject $E4C reward to staking pool
+    e4c ->> staking: inject $E4C reward to staking pool
     staking -->> staking: wait for staking days
     U ->> staking: request to unstake $E4C
     staking ->> U: transfer staked and reward $E4C
     alt optional
         U ->> staking: destroy empty staking pool
-        staking ->> U: Get storage rebate
+        staking ->> U: get storage rebate
     end
+```
+
+### Pay $E4C
+
+The following sequence diagram illustrates the process of paying $E4C token.
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant e4c
+    participant exchange
+    U ->> exchange: pay $E4C with action name
+    exchange ->> e4c: transfer $E4C to inventory
+    e4c ->> exchange: issue PaymentReceipt
+    Note over exchange: The receipt can be used to exchange for on-chain assets in the future
+    exchange ->> exchange: Emit Payed event
+    Note over exchange: The event can be used to track the payment history in web2
 ```
 
 ### Configure Staking Pool
@@ -81,5 +99,5 @@ sequenceDiagram
     participant config
     A ->> config: add/remove configure staking pool
     config ->> config: set staking pool configuration
-    Note over config: the update does not affect existing staking pool
+    Note over config: The update does not affect existing staking pool
 ```
