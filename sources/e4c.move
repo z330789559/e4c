@@ -41,6 +41,7 @@ module e4c::e4c {
     fun init(witness: E4C, ctx: &mut TxContext) {
         let (treasury, metadata) = coin::create_currency(
             witness,
+            /// TODO: Need to update the metadata according to the actual requirements.
             6,
             b"E4C",
             b"E4C Token",
@@ -68,6 +69,8 @@ module e4c::e4c {
     //     coin
     // }
     
+    /// Take E4C tokens from the Inventory without capability check.
+    /// This function is only accessible to the friend module.
     public(friend) fun take_by_friend(inventory: &mut Inventory, amount: u64, ctx: &mut TxContext): Coin<E4C> {
         assert!(amount > 0, EAmountTooLow);
         assert!(amount <= balance::value(&inventory.balance), EAmountTooHigh);

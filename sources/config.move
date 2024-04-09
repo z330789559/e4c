@@ -46,7 +46,7 @@ module e4c::config {
         vec_map::insert(&mut config.staking_details, 30, StakingDetails {
             staking_time: 30,
             annualized_interest_rate_bp: 1000, /// 10%
-            staking_quantity_range_min: 0,
+            staking_quantity_range_min: 1,
             staking_quantity_range_max: 100,
         });
         vec_map::insert(&mut config.staking_details, 60, StakingDetails {
