@@ -59,6 +59,12 @@ module e4c::exchange {
         amount_unlocked: u64,
     }
 
+    /// === Public Functions ===
+
+    /// Create a new exchange pool for the user who calls this function.
+    /// The pool should be turned into a shared object in a PTB.
+    /// The reason why I don't turn the pool into a shared object in this function is that
+    /// the client can create a pool and then reqest to exchange in the pool in the same transaction.
     public fun new_exchange_pool(ctx: &mut TxContext): ExchangePool {
         let id = object::new(ctx);
         event::emit(ExchangePoolCreated {
@@ -74,6 +80,8 @@ module e4c::exchange {
         }
     }
 
+    /// Create a new exchange request in the pool and increase the total expected E4C amount of the pool.
+    /// This function can be called only by the owner of the pool.
     public fun new_exchange_request(
         pool: &mut ExchangePool,
         action: ascii::String,
@@ -83,8 +91,10 @@ module e4c::exchange {
         inventory: &mut Inventory,
         ctx: &mut TxContext
     ) {
+        assert!(pool.owner == sender(ctx), EInvalidExchangePoolOwner);
         assert!(amount_locked > 0, ELockedAmountMustBeGreaterThanZero);
         let detail = get_exchange_detail(config, action);
+
         let exchange_ratio = exchange_ratio(&detail);
         let expected_e4c_balance = amount_locked * exchange_ratio;
         let locked_at = clock::timestamp_ms(clock);
