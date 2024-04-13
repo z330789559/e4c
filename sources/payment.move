@@ -2,8 +2,7 @@ module e4c::payment {
 
     use std::string::String;
 
-    use sui::coin;
-    use sui::coin::Coin;
+    use sui::coin::{Self, Coin};
     use sui::event;
     use sui::transfer;
     use sui::tx_context::{sender, TxContext};

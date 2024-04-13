@@ -2,15 +2,11 @@ module e4c::exchange {
 
     use std::ascii;
 
-    use sui::balance;
-    use sui::balance::Balance;
-    use sui::clock;
-    use sui::clock::Clock;
+    use sui::balance::{Self, Balance};
+    use sui::clock::{Self, Clock};
     use sui::coin;
     use sui::event;
-    use sui::object;
-    use sui::object::{ID, UID};
-    use sui::token::action;
+    use sui::object::{Self, ID, UID};
     use sui::transfer;
     use sui::tx_context::{sender, TxContext};
 

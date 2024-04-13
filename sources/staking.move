@@ -1,12 +1,9 @@
 module e4c::staking {
-    use sui::balance;
-    use sui::balance::Balance;
-    use sui::clock;
-    use sui::clock::Clock;
+    use sui::balance::{Self, Balance};
+    use sui::clock::{Self, Clock};
     use sui::coin::{Self, Coin};
     use sui::event;
-    use sui::object;
-    use sui::object::{ID, UID};
+    use sui::object::{Self, ID, UID};
     use sui::transfer;
     use sui::tx_context::{sender, TxContext};
 
@@ -146,9 +143,6 @@ module e4c::staking {
         transfer::public_transfer(staked_coin, pool.owner);
     }
 
-    /// TODO: Consider to inject the logic into the unstake function
-    ///  need to check if it's possible to delete &mut UID in ustake function
-    ///  should I keep the logic as it is?
     public fun destroy_staking_pool(
         pool: StakingPool,
         ctx: &mut TxContext

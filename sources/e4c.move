@@ -1,12 +1,9 @@
 module e4c::e4c {
     use std::option;
 
-    use sui::balance;
-    use sui::balance::{Balance, Supply};
-    use sui::coin;
-    use sui::coin::Coin;
-    use sui::object;
-    use sui::object::UID;
+    use sui::balance::{Self, Balance, Supply};
+    use sui::coin::{Self, Coin};
+    use sui::object::{Self, UID};
     use sui::transfer;
     use sui::tx_context::{sender, TxContext};
 

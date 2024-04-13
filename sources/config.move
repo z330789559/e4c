@@ -1,12 +1,10 @@
 module e4c::config {
     use std::ascii;
 
-    use sui::object;
-    use sui::object::UID;
+    use sui::object::{Self, UID};
     use sui::transfer;
     use sui::tx_context::TxContext;
-    use sui::vec_map;
-    use sui::vec_map::VecMap;
+    use sui::vec_map::{Self, VecMap};
 
     use e4c::e4c::InventoryCap;
 
