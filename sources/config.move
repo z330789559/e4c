@@ -99,6 +99,7 @@ module e4c::config {
 
     /// https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
     public fun get_staking_detail(config: &StakingConfig, staking_time: u64): &StakingDetail {
+        /// TODO: Validation
         let index = vec_map::get_idx(&config.staking_details, &staking_time);
         let (_, details) = vec_map::get_entry_by_idx(&config.staking_details, index);
         details
@@ -169,6 +170,7 @@ module e4c::config {
 
     /// https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
     public fun get_exchange_detail(config: &ExchangeConfig, action: ascii::String): ExchangeDetail {
+        /// TODO: Validation
         let index = vec_map::get_idx(&config.exchange_details, &action);
         let (_, detail) = vec_map::get_entry_by_idx(&config.exchange_details, index);
         *detail

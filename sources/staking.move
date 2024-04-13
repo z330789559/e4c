@@ -24,7 +24,8 @@ module e4c::staking {
     const EStakingPoolShouldBeEmptied: u64 = 4;
     const EInvalidStakingPoolOwner: u64 = 5;
 
-    /// TODO: Consider to make it owned object to realize the ownership of the pool
+    /// TODO: This could be a owned object for the sake of visibility of the pool object in the user's wallet.
+    ///     But then calling the unstake function cannot be done by ambrus and it's hard to achieve the "automatic unstaking" feature.
     /// [Shared Object]: StakingPool represents a pool of staked tokens.
     /// The pool will have complete setup upon creation including rewards since it's fixed.
     /// Once it's created, you can only unstake the tokens when the staking time is ended.
