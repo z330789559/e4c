@@ -7,7 +7,6 @@ module e4c::exchange {
     use sui::clock;
     use sui::clock::Clock;
     use sui::coin;
-    use sui::coin::Coin;
     use sui::event;
     use sui::object;
     use sui::object::{ID, UID};
@@ -79,12 +78,10 @@ module e4c::exchange {
         })
     }
 
-    public fun exchange_locup_end(pool: &ExchangePool): u64 {
-        pool.locked_at + exchange_lockup_period_in_days(&pool.detail) * 24 * 60 * 60 * 1000
-    }
-
-    public fun unlock(pool: &mut ExchangePool, clock: &Clock, ctx: &mut TxContext): Coin<E4C> {
-        assert!(pool.owner == sender(ctx), EInvalidExchangePoolOwner);
+    /// Unlock the tokens in the pool.
+    /// This function can be called only when the locking period is ended and
+    /// also by anybody who wants to trigger the unlocking.
+    public fun unlock(pool: &mut ExchangePool, clock: &Clock, ctx: &mut TxContext) {
         assert!(exchange_locup_end(pool) <= clock::timestamp_ms(clock),
             EExchangePoolLockupPeriodNotPassed
         );
@@ -94,8 +91,16 @@ module e4c::exchange {
             owner: pool.owner,
             amount_unlocked: balance,
         });
-        coin::take(&mut pool.e4c_balance, balance, ctx)
+        let coin = coin::take(&mut pool.e4c_balance, balance, ctx);
+        transfer::public_transfer(coin, pool.owner);
     }
 
     /// TODO: add delete function
+
+    /// === Public View Functions ===
+
+    /// Returns the end time of the lockup period of the pool.
+    public fun exchange_locup_end(pool: &ExchangePool): u64 {
+        pool.locked_at + exchange_lockup_period_in_days(&pool.detail) * 24 * 60 * 60 * 1000
+    }
 }

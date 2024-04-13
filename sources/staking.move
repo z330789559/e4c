@@ -27,6 +27,7 @@ module e4c::staking {
     const EStakingPoolShouldBeEmptied: u64 = 4;
     const EInvalidStakingPoolOwner: u64 = 5;
 
+    /// TODO: Consider to make it owned object to realize the ownership of the pool
     /// [Shared Object]: StakingPool represents a pool of staked tokens.
     /// The pool will be created by a user and will have a reward rate that will be used to calculate the rewards for the stakers.
     /// Once it's created, you can only unstake the tokens when the staking time is ended.
@@ -116,12 +117,14 @@ module e4c::staking {
         new_staking_pool(stake, staking_time, clock, config, inventory, ctx);
     }
 
+    /// Unstake the tokens from the pool.
+    /// This function can be called only when the staking time is ended and
+    /// also by anybody who wants to trigger the unstaking.
     public fun unstake(
         pool: &mut StakingPool,
         clock: &Clock,
         ctx: &mut TxContext
-    ): Coin<E4C> {
-        assert!(pool.owner == sender(ctx), EInvalidStakingPoolOwner);
+    ) {
         assert!(
             staking_time_end(pool.applied_staking_days, pool.staked_at) <= clock::timestamp_ms(clock),
             EStakingTimeNotEnded
@@ -136,11 +139,11 @@ module e4c::staking {
 
         event::emit(Unstaked {
             pool_id: object::uid_to_inner(&pool.id),
-            owner: sender(ctx),
+            owner: pool.owner,
             amount: staked
         });
         coin::join(&mut staked_coin, reward_coin);
-        staked_coin
+        transfer::public_transfer(staked_coin, pool.owner);
     }
 
     /// TODO: Consider to inject the logic into the unstake function

@@ -40,6 +40,7 @@ module e4c::config {
         staking_quantity_range_max: u64,
     }
 
+    /// [Shared Object]: ExchangeConfig is a configuration for exchange
     struct ExchangeConfig has key, store {
         id: UID,
         /// exchange action name -> exchange details
