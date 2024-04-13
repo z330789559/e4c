@@ -165,13 +165,6 @@ module e4c::config {
         detail.annualized_interest_rate_bp
     }
 
-    public fun staking_time_end(
-        staking_days: u64,
-        timestamp: u64
-    ): u64 {
-        timestamp + staking_days * 24 * 60 * 60 * 1000
-    }
-
     /// === Exchange Config Functions ===
 
     /// https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
@@ -187,6 +180,18 @@ module e4c::config {
 
     public fun exchange_ratio(detail: &ExchangeDetail): u64 {
         detail.exchange_ratio
+    }
+
+    /// === Helper Functions ===
+
+    /// Calculate the locking time in milliseconds
+    ///     base_timestamp: the base timestamp in milliseconds
+    ///     locking_days: the number of days to lock
+    public fun calculate_locking_time(
+        base_timestamp: u64,
+        locking_days: u64
+    ): u64 {
+        base_timestamp + locking_days * 24 * 60 * 60 * 1000
     }
 
     #[test_only]

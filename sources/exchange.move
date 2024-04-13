@@ -10,10 +10,9 @@ module e4c::exchange {
     use sui::transfer;
     use sui::tx_context::{sender, TxContext};
 
-    use e4c::config::{exchange_lockup_period_in_days,
-        exchange_ratio,
-        ExchangeConfig,
-        ExchangeDetail, get_exchange_detail
+    use e4c::config::{calculate_locking_time,
+        exchange_lockup_period_in_days,
+        exchange_ratio, ExchangeConfig, ExchangeDetail, get_exchange_detail
     };
     use e4c::e4c::{E4C, Inventory, take_by_friend};
 
@@ -30,6 +29,7 @@ module e4c::exchange {
         amount_locked: u64,
         locked_at: u64,
         detail: ExchangeDetail,
+        locking_end_at: u64,
         e4c_balance: Balance<E4C>,
     }
 
@@ -58,6 +58,7 @@ module e4c::exchange {
         let exchange_balance = amount_locked * exchange_ratio;
         let e4c = take_by_friend(inventory, exchange_balance, ctx);
         let id = object::new(ctx);
+        let locked_at = clock::timestamp_ms(clock);
 
         event::emit(ExchangePoolCreated {
             pool_id: object::uid_to_inner(&id),
@@ -68,8 +69,9 @@ module e4c::exchange {
             id,
             owner: sender(ctx),
             amount_locked,
-            locked_at: clock::timestamp_ms(clock),
+            locked_at,
             detail,
+            locking_end_at: calculate_locking_time(locked_at, exchange_lockup_period_in_days(&detail)),
             e4c_balance: coin::into_balance(e4c),
         })
     }
@@ -78,7 +80,7 @@ module e4c::exchange {
     /// This function can be called only when the locking period is ended and
     /// also by anybody who wants to trigger the unlocking.
     public fun unlock(pool: &mut ExchangePool, clock: &Clock, ctx: &mut TxContext) {
-        assert!(exchange_locup_end(pool) <= clock::timestamp_ms(clock),
+        assert!(pool.locking_end_at <= clock::timestamp_ms(clock),
             EExchangePoolLockupPeriodNotPassed
         );
         let balance = balance::value(&pool.e4c_balance);
@@ -92,11 +94,4 @@ module e4c::exchange {
     }
 
     /// TODO: add delete function
-
-    /// === Public View Functions ===
-
-    /// Returns the end time of the lockup period of the pool.
-    public fun exchange_locup_end(pool: &ExchangePool): u64 {
-        pool.locked_at + exchange_lockup_period_in_days(&pool.detail) * 24 * 60 * 60 * 1000
-    }
 }

@@ -9,10 +9,10 @@ module e4c::staking {
 
     use e4c::config::{
         annualized_interest_rate_bp,
+        calculate_locking_time,
         get_staking_detail,
         staking_quantity_range,
-        staking_reward,
-        staking_time_end, StakingConfig
+        staking_reward, StakingConfig
     };
     use e4c::e4c::{E4C, Inventory, take_by_friend};
 
@@ -26,11 +26,10 @@ module e4c::staking {
 
     /// TODO: Consider to make it owned object to realize the ownership of the pool
     /// [Shared Object]: StakingPool represents a pool of staked tokens.
-    /// The pool will be created by a user and will have a reward rate that will be used to calculate the rewards for the stakers.
+    /// The pool will have complete setup upon creation including rewards since it's fixed.
     /// Once it's created, you can only unstake the tokens when the staking time is ended.
     struct StakingPool has key {
         id: UID,
-        /// TODO: Consider to use key object when claiming instead of seeing the match of the owner
         /// Address of the pool owner
         owner: address,
         /// Amount of tokens staked in the pool
@@ -41,6 +40,8 @@ module e4c::staking {
         applied_staking_days: u64,
         /// Interest rate applied to the staked tokens
         applied_interest_rate_bp: u16,
+        /// Time when the staking ends
+        staking_end_at: u64,
         /// Amount of rewards available for the stakers.
         /// The rewards are calculated based on the staking time and the staked amount.
         /// The amount is fixed when the pool is created so put the rewards in the pool at the creation time
@@ -71,19 +72,20 @@ module e4c::staking {
     ///     The number to be unlocked is equal to the number of tokens try to be staked.
     public fun new_staking_pool(
         stake: Coin<E4C>,
-        staking_time: u64,
+        staking_days: u64,
         clock: &Clock,
         config: &StakingConfig,
         inventory: &mut Inventory,
         ctx: &mut TxContext
     ) {
-        let detail = get_staking_detail(config, staking_time);
+        let detail = get_staking_detail(config, staking_days);
         let (min, max) = staking_quantity_range(detail);
         let amount = coin::value(&stake);
         assert!(amount >= min, EStakingQuantityTooLow);
         assert!(amount <= max, EStakingQuantityTooHigh);
 
-        let reward = staking_reward(config, staking_time, amount);
+        let staked_at = clock::timestamp_ms(clock);
+        let reward = staking_reward(config, staking_days, amount);
         let id = object::new(ctx);
 
         event::emit(Staked {
@@ -91,13 +93,15 @@ module e4c::staking {
             owner: sender(ctx),
             amount
         });
+
         let pool = StakingPool {
             id,
             owner: sender(ctx),
             amount_staked: coin::into_balance(stake),
-            staked_at: clock::timestamp_ms(clock),
-            applied_staking_days: staking_time,
+            staked_at,
+            applied_staking_days: staking_days,
             applied_interest_rate_bp: annualized_interest_rate_bp(detail),
+            staking_end_at: calculate_locking_time(staked_at, staking_days),
             reward: coin::into_balance(take_by_friend(inventory, reward, ctx))
         };
         transfer::share_object(pool);
@@ -123,7 +127,7 @@ module e4c::staking {
         ctx: &mut TxContext
     ) {
         assert!(
-            staking_time_end(pool.applied_staking_days, pool.staked_at) <= clock::timestamp_ms(clock),
+            pool.staking_end_at <= clock::timestamp_ms(clock),
             EStakingTimeNotEnded
         );
         let (staked, reward) = (balance::value(&pool.amount_staked), balance::value(&pool.reward));
@@ -156,6 +160,7 @@ module e4c::staking {
             staked_at: _,
             applied_staking_days: _,
             applied_interest_rate_bp: _,
+            staking_end_at: _,
             reward: balance_reward,
         } = pool;
         balance::destroy_zero(balance_staked);
