@@ -174,6 +174,7 @@ module e4c::config {
         let index = vec_map::get_idx(&config.exchange_details, &action);
         let (_, detail) = vec_map::get_entry_by_idx(&config.exchange_details, index);
         *detail
+        /// TODO: Can we use `vec_map::try_get` here??
     }
 
     public fun exchange_lockup_period_in_days(detail: &ExchangeDetail): u64 {

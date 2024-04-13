@@ -1,6 +1,7 @@
 module e4c::exchange {
 
     use std::ascii;
+    use std::vector;
 
     use sui::balance::{Self, Balance};
     use sui::clock::{Self, Clock};
@@ -15,7 +16,7 @@ module e4c::exchange {
         exchange_lockup_period_in_days,
         exchange_ratio, ExchangeConfig, ExchangeDetail, get_exchange_detail
     };
-    use e4c::e4c::{E4C, Inventory, take_by_friend};
+    use e4c::e4c::{E4C, Inventory, InventoryCap, take_by_friend};
 
     /// === Errors ===
     const ELockedAmountMustBeGreaterThanZero: u64 = 1;
@@ -44,6 +45,14 @@ module e4c::exchange {
     struct ExchangePoolCreated has copy, drop {
         pool_id: ID,
         owner: address,
+    }
+
+    struct BonusWithdrawn has copy, drop {
+        pool_id: ID,
+        owner: address,
+        withdrawn_bonus: u64,
+        withdrawn_request_id: vector<ID>,
+        withdrawn_request_amount: vector<u64>,
     }
 
     struct ExchangeRequestCreated has copy, drop {
@@ -122,7 +131,7 @@ module e4c::exchange {
     /// Unlock the tokens in the pool.
     /// This function can be called only when the locking period is ended and
     /// also by anybody who wants to trigger the unlocking.
-    public fun unlock(pool: &mut ExchangePool, request_id: ID, clock: &Clock, ctx: &mut TxContext) {
+    public fun unlock(pool: &mut ExchangePool, request_id: &ID, clock: &Clock, ctx: &mut TxContext) {
         let owner = pool.owner;
         let request = get_exchange_request_mut(pool, request_id);
         assert!(request.locking_end_at <= clock::timestamp_ms(clock),
@@ -139,15 +148,54 @@ module e4c::exchange {
         transfer::public_transfer(coin, owner);
     }
 
-    /// TODO: add withdraw bonus function
+    /// Withdraw the requesting staking bonus from the pool.
+    /// This function can be called only by the owner of the InventoryCap.
+    /// The bonus is withdrawn from the pool and transferred to the owner of the pool.
+    public fun withdraw_bonus(_: &InventoryCap, pool: &mut ExchangePool, amount: u64, ctx: &mut TxContext) {
+        let bonus = balance::zero<E4C>();
+        let remaining_amount = amount;
+        let withdrawn_request_id = vector::empty<ID>();
+        let withdrawn_request_amount = vector::empty<u64>();
+        let (i, len) = (0, vec_map::size(&pool.exchanging_requests));
+        let keys = vec_map::keys(&pool.exchanging_requests);
+        while (i < len) {
+            let request = get_exchange_request_mut(pool, vector::borrow(&keys, i));
+            let available_amount = balance::value(&request.e4c_balance);
+            if (available_amount <= remaining_amount) {
+                remaining_amount = remaining_amount - available_amount;
+                vector::push_back(&mut withdrawn_request_amount, balance::value(&request.e4c_balance));
+                balance::join(&mut bonus, balance::withdraw_all(&mut request.e4c_balance));
+                /// TODO: destroy empty request
+            } else {
+                let e4c_coin = balance::split(&mut request.e4c_balance, remaining_amount);
+                remaining_amount = 0;
+                vector::push_back(&mut withdrawn_request_amount, balance::value(&e4c_coin));
+                balance::join(&mut bonus, e4c_coin);
+            };
+            vector::push_back(&mut withdrawn_request_id, object::uid_to_inner(&request.id));
+            if (remaining_amount == 0) {
+                break
+            };
+            i = i + 1;
+        };
+        event::emit(BonusWithdrawn {
+            pool_id: object::uid_to_inner(&pool.id),
+            owner: pool.owner,
+            withdrawn_bonus: balance::value<E4C>(&bonus),
+            withdrawn_request_id,
+            withdrawn_request_amount,
+        });
+
+        transfer::public_transfer(coin::from_balance<E4C>(bonus, ctx), pool.owner);
+    }
 
     /// TODO: add delete function
 
     /// === Private Functions ===
 
-    fun get_exchange_request_mut(pool: &mut ExchangePool, request_id: ID): &mut ExchangeRequest {
+    fun get_exchange_request_mut(pool: &mut ExchangePool, request_id: &ID): &mut ExchangeRequest {
         /// TODO: Validation
-        let index = vec_map::get_idx(&pool.exchanging_requests, &request_id);
+        let index = vec_map::get_idx(&pool.exchanging_requests, request_id);
         let (_, request) = vec_map::get_entry_by_idx_mut(&mut pool.exchanging_requests, index);
         request
     }
