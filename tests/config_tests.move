@@ -8,10 +8,13 @@ module e4c::config_tests {
     #[test]
     fun test_reward() {
         let ctx = tx_context::dummy();
-        let (staking_quantity, staking_time,
+        let (staking_quantity,
+            staking_time,
             annualized_interest_rate_bp,
             staking_quantity_range_min,
-            staking_quantity_range_max, expected_reward) = (100, 30, 1000, 1, 100, 8);
+            staking_quantity_range_max,
+            expected_reward
+        ) = (100, 30, 1000, 1, 100, 8);
         let details = config::new_staking_details(
             staking_time,
             annualized_interest_rate_bp,

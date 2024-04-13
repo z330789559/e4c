@@ -11,6 +11,68 @@ Modules high level description:
 - Exchange Module: Handles the exchange of E4C tokens
 - Config Module: Handles the configuration of the staking pool
 
+```mermaid
+graph TB
+    subgraph Smart Contract
+        subgraph E4C Module
+            TC[TreasuryCap]
+            E4CM[Metadata]
+            E4C[$E4C]
+            I[[Inventory]]
+        end
+        subgraph Vesting Module
+            VP[VestingPool]
+        end
+        subgraph Staking Module
+            SP[StakingPool]
+        end
+        subgraph Exchange Module
+            PR[PayoutReceipt]
+            EP[ExchangePool]
+        end
+        subgraph Config Module
+            SC[StakingConfig]
+            EC[ExchangeConfig]
+        end
+    end
+
+    subgraph Game
+        AG[ArenaGem]
+        TR[TicketRoom]
+    end
+
+    subgraph Game
+        AG[Arena Gem]
+    end
+
+    subgraph Actors
+        U[Users]
+        S[Shareholders]
+        A[Admin]
+    end
+
+%% Package Publishing 
+    A -- Publish Package --> TC -- Mint --> E4C -- All in --> I
+    TC -- Freeze --> E4CM
+    TC -- Burn --> TC
+%% Vesting
+    I -- Inject --> VP
+    S -- Claim --> VP
+    VP -- Release --> S
+%% Exchange
+    U -- Hold --> AG
+    AG <-- Exchangeable --> I
+    I -- Exchange AGem for $E4C --> EP
+    EP -- Wait for 10 days --> EP
+    EP -- Release 100 $E4C <br>per day --> U
+    EP -- Release staked <br>amount of $E4C --> U
+%% Staking  && Unstaking
+    U -- Stake $E4C --> SP
+    I -- Inject Reward --> SP
+    SP -- Wait for <br>staking period --> SP
+    SP -- Unstake $E4C --> U
+```
+
 ## Sequence Diagram
 
 ### Publish Package and Mint $E4C
