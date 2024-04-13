@@ -125,6 +125,7 @@ module e4c::exchange {
             amount_unlocked: balance,
         });
         let coin = coin::take(&mut request.e4c_balance, balance, ctx);
+        pool.total_expected_e4c_amount = pool.total_expected_e4c_amount - balance;
         transfer::public_transfer(coin, owner);
     }
 
