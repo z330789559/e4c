@@ -63,29 +63,48 @@ module e4c::e4c {
         );
     }
 
-    // public fun take(_: &InventoryCap, inventory: &mut Inventory, amount: u64, ctx: &mut TxContext): Coin<E4C> {
-    //     assert!(amount > 0, EAmountMustBeGreterThanZero);
-    //     assert!(amount <= balance::value(&inventory.balance), EAmountTooHigh);
-    //
-    //     let coin = coin::take(&mut inventory.balance, amount, ctx);
-    //     coin
-    // }
+    // === Public Functions ===
+
+    // Take E4C tokens from the Inventory with capability check.
+    public fun take_from_inventory(
+        _: &InventoryCap,
+        inventory: &mut Inventory,
+        amount: u64,
+        ctx: &mut TxContext
+    ): Coin<E4C> {
+        internal_take_from_inventory(inventory, amount, ctx)
+    }
 
     // Take E4C tokens from the Inventory without capability check.
     // This function is only accessible to the friend module.
-    public(friend) fun take_by_friend(inventory: &mut Inventory, amount: u64, ctx: &mut TxContext): Coin<E4C> {
-        assert!(amount > 0, EAmountMustBeGreaterThanZero);
-        assert!(amount <= balance::value(&inventory.balance), EAmountTooHigh);
-
-        let coin = coin::take(&mut inventory.balance, amount, ctx);
-        coin
+    public(friend) fun take_by_friend(
+        inventory: &mut Inventory,
+        amount: u64,
+        ctx: &mut TxContext
+    ): Coin<E4C> {
+        internal_take_from_inventory(inventory, amount, ctx)
     }
 
     // Put back E4C tokens to the Inventory without capability check.
     // This function can be called by anyone.
     public fun put_back(inventory: &mut Inventory, coin: Coin<E4C>) {
         assert!(coin::value(&coin) > 0, EAmountMustBeGreaterThanZero);
+
+        // TODO: Consider adding an event
         balance::join(&mut inventory.balance, coin::into_balance(coin));
+    }
+
+    // === Private Functions ===
+    fun internal_take_from_inventory(
+        inventory: &mut Inventory,
+        amount: u64,
+        ctx: &mut TxContext
+    ): Coin<E4C> {
+        assert!(amount > 0, EAmountMustBeGreaterThanZero);
+        assert!(amount <= balance::value(&inventory.balance), EAmountTooHigh);
+
+        let coin = coin::take(&mut inventory.balance, amount, ctx);
+        coin
     }
 
     #[test_only]
