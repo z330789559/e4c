@@ -12,7 +12,7 @@ module e4c::e4c {
 
     /// === Errors ===
     /// Error code for when the amount is too low.
-    const EAmountTooLow: u64 = 1;
+    const EAmountMustBeGreaterThanZero: u64 = 1;
     const EAmountTooHigh: u64 = 2;
 
     /// === Constants ===
@@ -60,7 +60,7 @@ module e4c::e4c {
     }
 
     // public fun take(_: &InventoryCap, inventory: &mut Inventory, amount: u64, ctx: &mut TxContext): Coin<E4C> {
-    //     assert!(amount > 0, EAmountTooLow);
+    //     assert!(amount > 0, EAmountMustBeGreterThanZero);
     //     assert!(amount <= balance::value(&inventory.balance), EAmountTooHigh);
     //
     //     let coin = coin::take(&mut inventory.balance, amount, ctx);
@@ -70,11 +70,18 @@ module e4c::e4c {
     /// Take E4C tokens from the Inventory without capability check.
     /// This function is only accessible to the friend module.
     public(friend) fun take_by_friend(inventory: &mut Inventory, amount: u64, ctx: &mut TxContext): Coin<E4C> {
-        assert!(amount > 0, EAmountTooLow);
+        assert!(amount > 0, EAmountMustBeGreaterThanZero);
         assert!(amount <= balance::value(&inventory.balance), EAmountTooHigh);
 
         let coin = coin::take(&mut inventory.balance, amount, ctx);
         coin
+    }
+
+    /// Put back E4C tokens to the Inventory without capability check.
+    /// This function can be called by anyone.
+    public fun put_back(inventory: &mut Inventory, coin: Coin<E4C>, ctx: &mut TxContext) {
+        assert!(coin::value(&coin) > 0, EAmountMustBeGreaterThanZero);
+        coin::join(&mut inventory.balance, coin);
     }
 
     #[test_only]
