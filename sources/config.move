@@ -10,9 +10,12 @@ module e4c::config {
 
     /// === Errors ===
     const EIncorrectBasisPoints: u64 = 0;
-    const EStakingTimeMissing: u64 = 1;
+    const EStakingTimeMustBeGreaterThanZero: u64 = 1;
     const EStakingTimeConflict: u64 = 2;
     const EStakingQuantityRangeUnmatch: u64 = 3;
+    const EExchangeDetailNotFound: u64 = 4;
+    const ELockupPeriodMustBeGreaterThanZero: u64 = 5;
+    const EExchangeActionConflict: u64 = 6;
 
     /// === Constants ===
     const MAX_U64: u64 = 18446744073709551615;
@@ -28,7 +31,8 @@ module e4c::config {
         staking_details: VecMap<u64, StakingDetail>,
     }
 
-    struct StakingDetail has store {
+    /// TODO: is it safe to use `drop` here?
+    struct StakingDetail has store, drop {
         /// staking time in days
         staking_time: u64,
         /// annualized interest rate in basis points
@@ -113,7 +117,7 @@ module e4c::config {
         staking_quantity_range_min: u64,
         staking_quantity_range_max: u64
     ) {
-        assert!(staking_time > 0, EStakingTimeMissing);
+        assert!(staking_time > 0, EStakingTimeMustBeGreaterThanZero);
         assert!(annualized_interest_rate_bp <= MAX_BPS, EIncorrectBasisPoints);
         assert!(vec_map::contains(&config.staking_details, &staking_time) == false, EStakingTimeConflict);
         assert!(staking_quantity_range_min < staking_quantity_range_max, EStakingQuantityRangeUnmatch);
@@ -170,11 +174,41 @@ module e4c::config {
 
     /// https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
     public fun get_exchange_detail(config: &ExchangeConfig, action: ascii::String): ExchangeDetail {
-        /// TODO: Validation
+        assert!(vec_map::contains(&config.exchange_details, &action), EExchangeDetailNotFound);
         let index = vec_map::get_idx(&config.exchange_details, &action);
         let (_, detail) = vec_map::get_entry_by_idx(&config.exchange_details, index);
         *detail
         /// TODO: Can we use `vec_map::try_get` here??
+    }
+
+    public fun add_exchange_detail(
+        _: &InventoryCap,
+        config: &mut ExchangeConfig,
+        action: ascii::String,
+        lockup_period_in_days: u64,
+        exchange_ratio: u64
+    ) {
+        assert!(lockup_period_in_days > 0, ELockupPeriodMustBeGreaterThanZero);
+        assert!(exchange_ratio > 0, EIncorrectBasisPoints);
+        assert!(vec_map::contains(&config.exchange_details, &action) == false, EExchangeActionConflict);
+
+        /// TODO: add event
+
+        vec_map::insert(&mut config.exchange_details, action, ExchangeDetail {
+            action,
+            lockup_period_in_days,
+            exchange_ratio,
+        });
+    }
+
+    public fun remove_exchange_detail(
+        _: &InventoryCap,
+        config: &mut ExchangeConfig,
+        action: ascii::String
+    ): ExchangeDetail {
+        let (_, detail) = vec_map::remove(&mut config.exchange_details, &action);
+        /// TODO: add event
+        detail
     }
 
     public fun exchange_lockup_period_in_days(detail: &ExchangeDetail): u64 {
