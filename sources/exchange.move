@@ -16,12 +16,15 @@ module e4c::exchange {
         exchange_lockup_period_in_days,
         exchange_ratio, ExchangeConfig, ExchangeDetail, get_exchange_detail
     };
-    use e4c::e4c::{E4C, Inventory, InventoryCap, take_by_friend};
+    use e4c::e4c::{E4C, Inventory, take_by_friend};
+    use e4c::staking::{offered_bonus_amount, StakingBonusOffer};
 
     /// === Errors ===
     const ELockedAmountMustBeGreaterThanZero: u64 = 1;
     const EInvalidExchangePoolOwner: u64 = 2;
     const EExchangePoolLockupPeriodNotPassed: u64 = 3;
+    const EExchangeRequestNotFound: u64 = 4;
+    const EExchangeRequestBalanceIsNotZero: u64 = 5;
 
     /// [Shared Object]: ExchangePool is a shared object that represents the pool of locked tokens.
     /// The pool is created by the owner and the owner can lock the tokens in the pool.
@@ -64,8 +67,15 @@ module e4c::exchange {
 
     struct ExchangePoolUnlocked has copy, drop {
         pool_id: ID,
+        request_id: ID,
         owner: address,
         amount_unlocked: u64,
+    }
+
+    struct ExchangeRequestDestroyed has copy, drop {
+        pool_id: ID,
+        request_id: ID,
+        owner: address,
     }
 
     /// === Public Functions ===
@@ -131,15 +141,17 @@ module e4c::exchange {
     /// Unlock the tokens in the pool.
     /// This function can be called only when the locking period is ended and
     /// also by anybody who wants to trigger the unlocking.
-    public fun unlock(pool: &mut ExchangePool, request_id: &ID, clock: &Clock, ctx: &mut TxContext) {
+    public fun unlock(pool: &mut ExchangePool, request_id: ID, clock: &Clock, ctx: &mut TxContext) {
         let owner = pool.owner;
+        let pool_id = object::uid_to_inner(&pool.id);
         let request = get_exchange_request_mut(pool, request_id);
         assert!(request.locking_end_at <= clock::timestamp_ms(clock),
             EExchangePoolLockupPeriodNotPassed
         );
         let balance = balance::value(&request.e4c_balance);
         event::emit(ExchangePoolUnlocked {
-            pool_id: object::uid_to_inner(&request.id),
+            pool_id,
+            request_id,
             owner,
             amount_unlocked: balance,
         });
@@ -149,23 +161,30 @@ module e4c::exchange {
     }
 
     /// Withdraw the requesting staking bonus from the pool.
-    /// This function can be called only by the owner of the InventoryCap.
+    /// This function can be called only the moment when the user stakes the E4C.
+    /// So only the owner of the pool can call this function.
     /// The bonus is withdrawn from the pool and transferred to the owner of the pool.
-    public fun withdraw_bonus(_: &InventoryCap, pool: &mut ExchangePool, amount: u64, ctx: &mut TxContext) {
+    public fun withdraw_bonus(
+        offer: StakingBonusOffer,
+        pool: &mut ExchangePool,
+        ctx: &mut TxContext
+    ) {
         let bonus = balance::zero<E4C>();
-        let remaining_amount = amount;
+        let remaining_amount = offered_bonus_amount(offer);
         let withdrawn_request_id = vector::empty<ID>();
         let withdrawn_request_amount = vector::empty<u64>();
         let (i, len) = (0, vec_map::size(&pool.exchanging_requests));
         let keys = vec_map::keys(&pool.exchanging_requests);
         while (i < len) {
-            let request = get_exchange_request_mut(pool, vector::borrow(&keys, i));
+            let request = get_exchange_request_mut(pool, vector::pop_back(&mut keys));
             let available_amount = balance::value(&request.e4c_balance);
             if (available_amount <= remaining_amount) {
                 remaining_amount = remaining_amount - available_amount;
                 vector::push_back(&mut withdrawn_request_amount, balance::value(&request.e4c_balance));
                 balance::join(&mut bonus, balance::withdraw_all(&mut request.e4c_balance));
-                /// TODO: destroy empty request
+
+                /// TODO: destroy the empty exchange request
+                // destroy_exchange_request(pool, object::uid_as_inner(&request.id), ctx)
             } else {
                 let e4c_coin = balance::split(&mut request.e4c_balance, remaining_amount);
                 remaining_amount = 0;
@@ -189,13 +208,37 @@ module e4c::exchange {
         transfer::public_transfer(coin::from_balance<E4C>(bonus, ctx), pool.owner);
     }
 
-    /// TODO: add delete function
+    /// Destroy the exchange request and the get backe the storage rebate.
+    /// This function can be called only by the owner of the pool.
+    public fun destroy_exchange_request(pool: &mut ExchangePool, request_id: ID, ctx: &mut TxContext) {
+        assert!(pool.owner == sender(ctx), EInvalidExchangePoolOwner);
+        let request = get_exchange_request_mut(pool, request_id);
+        assert!(balance::value(&request.e4c_balance) == 0, EExchangeRequestBalanceIsNotZero);
+
+        let (_, request) = vec_map::remove(&mut pool.exchanging_requests, &request_id);
+        let ExchangeRequest {
+            id,
+            amount_locked: _,
+            locked_at: _,
+            detail: _,
+            locking_end_at: _,
+            e4c_balance
+        } = request;
+        event::emit(ExchangeRequestDestroyed {
+            pool_id: object::uid_to_inner(&pool.id),
+            request_id: object::uid_to_inner(&id),
+            owner: sender(ctx),
+        });
+
+        balance::destroy_zero(e4c_balance);
+        object::delete(id);
+    }
 
     /// === Private Functions ===
 
-    fun get_exchange_request_mut(pool: &mut ExchangePool, request_id: &ID): &mut ExchangeRequest {
-        /// TODO: Validation
-        let index = vec_map::get_idx(&pool.exchanging_requests, request_id);
+    fun get_exchange_request_mut(pool: &mut ExchangePool, request_id: ID): &mut ExchangeRequest {
+        assert!(vec_map::contains(&pool.exchanging_requests, &request_id), EExchangeRequestNotFound);
+        let index = vec_map::get_idx(&pool.exchanging_requests, &request_id);
         let (_, request) = vec_map::get_entry_by_idx_mut(&mut pool.exchanging_requests, index);
         request
     }

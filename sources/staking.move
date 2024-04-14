@@ -50,6 +50,13 @@ module e4c::staking {
         reward: Balance<E4C>,
     }
 
+    /// StakingBonusOffer represents the offer of staking bonus.
+    /// The offer is created when a new staking pool is created.
+    struct StakingBonusOffer has drop {
+        pool_id: ID,
+        amount: u64,
+    }
+
     /// Event emitted when a new staking pool is created
     struct Staked has copy, drop {
         pool_id: ID,
@@ -78,7 +85,7 @@ module e4c::staking {
         config: &StakingConfig,
         inventory: &mut Inventory,
         ctx: &mut TxContext
-    ) {
+    ): StakingBonusOffer {
         let detail = get_staking_detail(config, staking_days);
         let (min, max) = staking_quantity_range(detail);
         let amount = coin::value(&stake);
@@ -88,9 +95,10 @@ module e4c::staking {
         let staked_at = clock::timestamp_ms(clock);
         let reward = staking_reward(config, staking_days, amount);
         let id = object::new(ctx);
+        let pool_id = object::uid_to_inner(&id);
 
         event::emit(Staked {
-            pool_id: object::uid_to_inner(&id),
+            pool_id,
             owner: sender(ctx),
             amount
         });
@@ -106,6 +114,10 @@ module e4c::staking {
             reward: coin::into_balance(take_by_friend(inventory, reward, ctx))
         };
         transfer::share_object(pool);
+        StakingBonusOffer {
+            pool_id,
+            amount,
+        }
     }
 
     public fun new_staking_pool_by_bonus(
@@ -170,5 +182,11 @@ module e4c::staking {
             pool_id: object::uid_to_inner(&id)
         });
         object::delete(id);
+    }
+
+    /// === View Functions ===
+
+    public fun offered_bonus_amount(offer: StakingBonusOffer): u64 {
+        offer.amount
     }
 }

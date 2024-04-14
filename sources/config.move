@@ -45,13 +45,13 @@ module e4c::config {
         exchange_details: VecMap<ascii::String, ExchangeDetail>,
     }
 
-    /// TODO: is it safe to use `copy` here?
-    struct ExchangeDetail has store, copy {
+    /// TODO: is it safe to use `copy` and `drop` here?
+    struct ExchangeDetail has store, copy, drop {
         /// exchange action name
         action: ascii::String,
         /// lockup period in days
         lockup_period_in_days: u64,
-        /// exchange ratio from X to E4C: 1: <value> = $E4C : X
+        /// exchange ratio from X to E4C( 1: <value> = $E4C : X )
         exchange_ratio: u64,
     }
 
