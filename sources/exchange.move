@@ -41,7 +41,7 @@ module e4c::exchange {
         amount_locked: u64,
         locked_at: u64,
         detail: ExchangeDetail,
-        locking_end_at: u64,
+        lockup_end_at: u64,
         e4c_balance: Balance<E4C>,
     }
 
@@ -117,7 +117,7 @@ module e4c::exchange {
         let exchange_ratio = exchange_ratio(&detail);
         let expected_e4c_balance = amount_locked * exchange_ratio;
         let locked_at = clock::timestamp_ms(clock);
-        let locking_end_at = calculate_locking_time(locked_at, exchange_lockup_period_in_days(&detail));
+        let lockup_end_at = calculate_locking_time(locked_at, exchange_lockup_period_in_days(&detail));
         let id = object::new(ctx);
         let request_id = object::uid_to_inner(&id);
         event::emit(ExchangeRequestCreated {
@@ -131,7 +131,7 @@ module e4c::exchange {
             id,
             amount_locked,
             locked_at,
-            locking_end_at,
+            lockup_end_at,
             detail,
             e4c_balance: coin::into_balance(take_by_friend(inventory, expected_e4c_balance, ctx)),
         });
@@ -145,7 +145,7 @@ module e4c::exchange {
         let owner = pool.owner;
         let pool_id = object::uid_to_inner(&pool.id);
         let request = get_exchange_request_mut(pool, request_id);
-        assert!(request.locking_end_at <= clock::timestamp_ms(clock),
+        assert!(request.lockup_end_at <= clock::timestamp_ms(clock),
             EExchangePoolLockupPeriodNotPassed
         );
         let balance = balance::value(&request.e4c_balance);
@@ -221,7 +221,7 @@ module e4c::exchange {
             amount_locked: _,
             locked_at: _,
             detail: _,
-            locking_end_at: _,
+            lockup_end_at: _,
             e4c_balance
         } = request;
         event::emit(ExchangeRequestDestroyed {

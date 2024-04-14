@@ -16,9 +16,12 @@ module e4c::e4c {
     const EAmountTooHigh: u64 = 2;
 
     // === Constants ===
-    // The maximum supply of E4C tokens.
+    // TODO: update the token metadata according to the requirements.
     const E4CTokenMaxSupply: u64 = 1_000_000_000;
-
+    const E4CTokenDecimals: u8 = 6;
+    const E4CTokenSymbol: vector<u8> = b"E4C";
+    const E4CTokenName: vector<u8> = b"$E4C";
+    const E4CTokenDescription: vector<u8> = b"$E4C is ...";
 
     // === Structs ===
 
@@ -27,6 +30,8 @@ module e4c::e4c {
     // [Owned Object]: InventoryCap is a cap for the E4C tokens.
     struct InventoryCap has key, store {
         id: UID,
+        // TODO: Consider adding the following field for visibility control.
+        // for: ID or vector<ID>
     }
 
     // [Shared Object]: Inventory is a store of minted E4C tokens.
@@ -39,11 +44,10 @@ module e4c::e4c {
     fun init(witness: E4C, ctx: &mut TxContext) {
         let (treasury, metadata) = coin::create_currency(
             witness,
-            // TODO: Need to update the metadata according to the actual requirements.
-            6,
-            b"E4C",
-            b"E4C Token",
-            b"E4C Token is ...",
+            E4CTokenDecimals,
+            E4CTokenSymbol,
+            E4CTokenName,
+            E4CTokenDescription,
             option::none(),
             ctx
         );
@@ -79,7 +83,7 @@ module e4c::e4c {
 
     // Put back E4C tokens to the Inventory without capability check.
     // This function can be called by anyone.
-    public fun put_back(inventory: &mut Inventory, coin: Coin<E4C>, ctx: &mut TxContext) {
+    public fun put_back(inventory: &mut Inventory, coin: Coin<E4C>) {
         assert!(coin::value(&coin) > 0, EAmountMustBeGreaterThanZero);
         balance::join(&mut inventory.balance, coin::into_balance(coin));
     }

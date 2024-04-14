@@ -176,11 +176,12 @@ module e4c::staking {
             staking_end_at: _,
             reward: balance_reward,
         } = pool;
-        balance::destroy_zero(balance_staked);
-        balance::destroy_zero(balance_reward);
         event::emit(PoolDestroyed {
             pool_id: object::uid_to_inner(&id)
         });
+
+        balance::destroy_zero(balance_staked);
+        balance::destroy_zero(balance_reward);
         object::delete(id);
     }
 

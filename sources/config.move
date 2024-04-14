@@ -121,7 +121,6 @@ module e4c::config {
         assert!(annualized_interest_rate_bp <= MAX_BPS, EIncorrectBasisPoints);
         assert!(vec_map::contains(&config.staking_details, &staking_time) == false, EStakingTimeConflict);
         assert!(staking_quantity_range_min < staking_quantity_range_max, EStakingQuantityRangeUnmatch);
-        // TODO: add other validation like nothing conflict with existing staking details
 
         vec_map::insert(&mut config.staking_details, staking_time, StakingDetail {
             staking_time,
@@ -144,7 +143,7 @@ module e4c::config {
 
     // === Public-View Functions ===
 
-    // TODO: Cosider to move to "staking" module
+    // TODO: Consider moving to "staking" module
     public fun staking_reward(
         config: &StakingConfig,
         staking_time: u64,

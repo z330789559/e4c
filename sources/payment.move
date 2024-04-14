@@ -36,7 +36,7 @@ module e4c::payment {
             purpose
         });
 
-        put_back(inventory, payment, ctx);
+        put_back(inventory, payment);
         // In the future, we can use the receipt to exchange for on-chain assets.
         PaymentReceipt {
             amount,
