@@ -16,7 +16,7 @@ module e4c::staking {
     };
     use e4c::e4c::{E4C, Inventory, take_by_friend};
 
-    /// === Errors ===
+    // === Errors ===
     const EStakingQuantityTooLow: u64 = 0;
     const EStakingQuantityTooHigh: u64 = 1;
     const EStakingTimeNotEnded: u64 = 2;
@@ -24,60 +24,60 @@ module e4c::staking {
     const EStakingPoolShouldBeEmptied: u64 = 4;
     const EInvalidStakingPoolOwner: u64 = 5;
 
-    /// TODO: This could be a owned object for the sake of visibility of the pool object in the user's wallet.
-    ///     But then calling the unstake function cannot be done by ambrus and it's hard to achieve the "automatic unstaking" feature.
-    /// [Shared Object]: StakingPool represents a pool of staked tokens.
-    /// The pool will have complete setup upon creation including rewards since it's fixed.
-    /// Once it's created, you can only unstake the tokens when the staking time is ended.
+    // TODO: This could be a owned object for the sake of visibility of the pool object in the user's wallet.
+    //     But then calling the unstake function cannot be done by ambrus and it's hard to achieve the "automatic unstaking" feature.
+    // [Shared Object]: StakingPool represents a pool of staked tokens.
+    // The pool will have complete setup upon creation including rewards since it's fixed.
+    // Once it's created, you can only unstake the tokens when the staking time is ended.
     struct StakingPool has key {
         id: UID,
-        /// Address of the pool owner
+        // Address of the pool owner
         owner: address,
-        /// Amount of tokens staked in the pool
+        // Amount of tokens staked in the pool
         amount_staked: Balance<E4C>,
-        /// Time when the pool was created
+        // Time when the pool was created
         staked_at: u64,
-        /// Staking time in days for the pool
+        // Staking time in days for the pool
         applied_staking_days: u64,
-        /// Interest rate applied to the staked tokens
+        // Interest rate applied to the staked tokens
         applied_interest_rate_bp: u16,
-        /// Time when the staking ends
+        // Time when the staking ends
         staking_end_at: u64,
-        /// Amount of rewards available for the stakers.
-        /// The rewards are calculated based on the staking time and the staked amount.
-        /// The amount is fixed when the pool is created so put the rewards in the pool at the creation time
-        /// so that user can avoid that the inventory are empty when the rewards are claimed
+        // Amount of rewards available for the stakers.
+        // The rewards are calculated based on the staking time and the staked amount.
+        // The amount is fixed when the pool is created so put the rewards in the pool at the creation time
+        // so that user can avoid that the inventory are empty when the rewards are claimed
         reward: Balance<E4C>,
     }
 
-    /// StakingBonusOffer represents the offer of staking bonus.
-    /// The offer is created when a new staking pool is created.
+    // StakingBonusOffer represents the offer of staking bonus.
+    // The offer is created when a new staking pool is created.
     struct StakingBonusOffer has drop {
         pool_id: ID,
         amount: u64,
     }
 
-    /// Event emitted when a new staking pool is created
+    // Event emitted when a new staking pool is created
     struct Staked has copy, drop {
         pool_id: ID,
         owner: address,
         amount: u64,
     }
 
-    /// Event emitted when unstaking tokens from a pool
+    // Event emitted when unstaking tokens from a pool
     struct Unstaked has copy, drop {
         pool_id: ID,
         owner: address,
         amount: u64,
     }
 
-    /// Event emitted when a staking pool is destroyed
+    // Event emitted when a staking pool is destroyed
     struct PoolDestroyed has copy, drop {
         pool_id: ID,
     }
 
-    /// TODO: The number of E4C tokens locked for exchange should be unlocked immediately.
-    ///     The number to be unlocked is equal to the number of tokens try to be staked.
+    // TODO: The number of E4C tokens locked for exchange should be unlocked immediately.
+    //     The number to be unlocked is equal to the number of tokens try to be staked.
     public fun new_staking_pool(
         stake: Coin<E4C>,
         staking_days: u64,
@@ -131,9 +131,9 @@ module e4c::staking {
         new_staking_pool(stake, staking_time, clock, config, inventory, ctx);
     }
 
-    /// Unstake the tokens from the pool.
-    /// This function can be called only when the staking time is ended and
-    /// also by anybody who wants to trigger the unstaking.
+    // Unstake the tokens from the pool.
+    // This function can be called only when the staking time is ended and
+    // also by anybody who wants to trigger the unstaking.
     public fun unstake(
         pool: &mut StakingPool,
         clock: &Clock,
@@ -184,7 +184,7 @@ module e4c::staking {
         object::delete(id);
     }
 
-    /// === View Functions ===
+    // === View Functions ===
 
     public fun offered_bonus_amount(offer: StakingBonusOffer): u64 {
         offer.amount

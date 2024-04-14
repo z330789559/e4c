@@ -8,14 +8,14 @@ module e4c::payment {
 
     use e4c::e4c::{E4C, Inventory, put_back};
 
-    /// The event that will be triggered when a payment is made.
+    // The event that will be triggered when a payment is made.
     struct Payed has drop, copy {
         amount: u64,
         payer: address,
         purpose: String
     }
 
-    /// The struct that will be used as a receipt for the payment.
+    // The struct that will be used as a receipt for the payment.
     struct PaymentReceipt has drop {
         amount: u64,
         payer: address,
@@ -29,7 +29,7 @@ module e4c::payment {
         ctx: &mut TxContext
     ): PaymentReceipt {
         let amount = coin::value(&payment);
-        /// The triggered event will be used to track the payment off-chain.
+        // The triggered event will be used to track the payment off-chain.
         event::emit(Payed {
             amount,
             payer: sender(ctx),
@@ -37,7 +37,7 @@ module e4c::payment {
         });
 
         put_back(inventory, payment, ctx);
-        /// In the future, we can use the receipt to exchange for on-chain assets.
+        // In the future, we can use the receipt to exchange for on-chain assets.
         PaymentReceipt {
             amount,
             payer: sender(ctx),

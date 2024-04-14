@@ -19,15 +19,15 @@ module e4c::exchange {
     use e4c::e4c::{E4C, Inventory, take_by_friend};
     use e4c::staking::{offered_bonus_amount, StakingBonusOffer};
 
-    /// === Errors ===
+    // === Errors ===
     const ELockedAmountMustBeGreaterThanZero: u64 = 1;
     const EInvalidExchangePoolOwner: u64 = 2;
     const EExchangePoolLockupPeriodNotPassed: u64 = 3;
     const EExchangeRequestNotFound: u64 = 4;
     const EExchangeRequestBalanceIsNotZero: u64 = 5;
 
-    /// [Shared Object]: ExchangePool is a shared object that represents the pool of locked tokens.
-    /// The pool is created by the owner and the owner can lock the tokens in the pool.
+    // [Shared Object]: ExchangePool is a shared object that represents the pool of locked tokens.
+    // The pool is created by the owner and the owner can lock the tokens in the pool.
     struct ExchangePool has key {
         id: UID,
         owner: address,
@@ -35,7 +35,7 @@ module e4c::exchange {
         exchanging_requests: VecMap<ID, ExchangeRequest>
     }
 
-    /// [Owned object by ExchangePool]: ExchangeRequest is an owned object by ExchangePool.
+    // [Owned object by ExchangePool]: ExchangeRequest is an owned object by ExchangePool.
     struct ExchangeRequest has key, store {
         id: UID,
         amount_locked: u64,
@@ -78,12 +78,12 @@ module e4c::exchange {
         owner: address,
     }
 
-    /// === Public Functions ===
+    // === Public Functions ===
 
-    /// Create a new exchange pool for the user who calls this function.
-    /// The pool should be turned into a shared object in a PTB.
-    /// The reason why I don't turn the pool into a shared object in this function is that
-    /// the client can create a pool and then reqest to exchange in the pool in the same transaction.
+    // Create a new exchange pool for the user who calls this function.
+    // The pool should be turned into a shared object in a PTB.
+    // The reason why I don't turn the pool into a shared object in this function is that
+    // the client can create a pool and then reqest to exchange in the pool in the same transaction.
     public fun new_exchange_pool(ctx: &mut TxContext): ExchangePool {
         let id = object::new(ctx);
         event::emit(ExchangePoolCreated {
@@ -99,8 +99,8 @@ module e4c::exchange {
         }
     }
 
-    /// Create a new exchange request in the pool and increase the total expected E4C amount of the pool.
-    /// This function can be called only by the owner of the pool.
+    // Create a new exchange request in the pool and increase the total expected E4C amount of the pool.
+    // This function can be called only by the owner of the pool.
     public fun new_exchange_request(
         pool: &mut ExchangePool,
         action: ascii::String,
@@ -138,9 +138,9 @@ module e4c::exchange {
         pool.total_expected_e4c_amount = pool.total_expected_e4c_amount + expected_e4c_balance;
     }
 
-    /// Unlock the tokens in the pool.
-    /// This function can be called only when the locking period is ended and
-    /// also by anybody who wants to trigger the unlocking.
+    // Unlock the tokens in the pool.
+    // This function can be called only when the locking period is ended and
+    // also by anybody who wants to trigger the unlocking.
     public fun unlock(pool: &mut ExchangePool, request_id: ID, clock: &Clock, ctx: &mut TxContext) {
         let owner = pool.owner;
         let pool_id = object::uid_to_inner(&pool.id);
@@ -160,10 +160,10 @@ module e4c::exchange {
         transfer::public_transfer(coin, owner);
     }
 
-    /// Withdraw the requesting staking bonus from the pool.
-    /// This function can be called only the moment when the user stakes the E4C.
-    /// So only the owner of the pool can call this function.
-    /// The bonus is withdrawn from the pool and transferred to the owner of the pool.
+    // Withdraw the requesting staking bonus from the pool.
+    // This function can be called only the moment when the user stakes the E4C.
+    // So only the owner of the pool can call this function.
+    // The bonus is withdrawn from the pool and transferred to the owner of the pool.
     public fun withdraw_bonus(
         offer: StakingBonusOffer,
         pool: &mut ExchangePool,
@@ -183,7 +183,7 @@ module e4c::exchange {
                 vector::push_back(&mut withdrawn_request_amount, balance::value(&request.e4c_balance));
                 balance::join(&mut bonus, balance::withdraw_all(&mut request.e4c_balance));
 
-                /// TODO: destroy the empty exchange request
+                // TODO: destroy the empty exchange request
                 // destroy_exchange_request(pool, object::uid_as_inner(&request.id), ctx)
             } else {
                 let e4c_coin = balance::split(&mut request.e4c_balance, remaining_amount);
@@ -208,8 +208,8 @@ module e4c::exchange {
         transfer::public_transfer(coin::from_balance<E4C>(bonus, ctx), pool.owner);
     }
 
-    /// Destroy the exchange request and the get backe the storage rebate.
-    /// This function can be called only by the owner of the pool.
+    // Destroy the exchange request and the get backe the storage rebate.
+    // This function can be called only by the owner of the pool.
     public fun destroy_exchange_request(pool: &mut ExchangePool, request_id: ID, ctx: &mut TxContext) {
         assert!(pool.owner == sender(ctx), EInvalidExchangePoolOwner);
         let request = get_exchange_request_mut(pool, request_id);
@@ -234,7 +234,7 @@ module e4c::exchange {
         object::delete(id);
     }
 
-    /// === Private Functions ===
+    // === Private Functions ===
 
     fun get_exchange_request_mut(pool: &mut ExchangePool, request_id: ID): &mut ExchangeRequest {
         assert!(vec_map::contains(&pool.exchanging_requests, &request_id), EExchangeRequestNotFound);

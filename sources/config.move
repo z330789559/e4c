@@ -8,7 +8,7 @@ module e4c::config {
 
     use e4c::e4c::InventoryCap;
 
-    /// === Errors ===
+    // === Errors ===
     const EIncorrectBasisPoints: u64 = 0;
     const EStakingTimeMustBeGreaterThanZero: u64 = 1;
     const EStakingTimeConflict: u64 = 2;
@@ -17,74 +17,74 @@ module e4c::config {
     const ELockupPeriodMustBeGreaterThanZero: u64 = 5;
     const EExchangeActionConflict: u64 = 6;
 
-    /// === Constants ===
+    // === Constants ===
     const MAX_U64: u64 = 18446744073709551615;
     const MAX_BPS: u16 = 10_000;
 
 
-    /// === Structs ===
+    // === Structs ===
 
-    /// [Shared Object]: StakingConfig is a configuration for staking
+    // [Shared Object]: StakingConfig is a configuration for staking
     struct StakingConfig has key, store {
         id: UID,
-        /// staking time in days -> staking details
+        // staking time in days -> staking details
         staking_details: VecMap<u64, StakingDetail>,
     }
 
-    /// TODO: is it safe to use `drop` here?
+    // TODO: is it safe to use `drop` here?
     struct StakingDetail has store, drop {
-        /// staking time in days
+        // staking time in days
         staking_time: u64,
-        /// annualized interest rate in basis points
+        // annualized interest rate in basis points
         annualized_interest_rate_bp: u16,
-        /// decided the range of staking quantity
+        // decided the range of staking quantity
         staking_quantity_range_min: u64,
         staking_quantity_range_max: u64,
     }
 
-    /// [Shared Object]: ExchangeConfig is a configuration for exchange
+    // [Shared Object]: ExchangeConfig is a configuration for exchange
     struct ExchangeConfig has key, store {
         id: UID,
-        /// exchange action name -> exchange details
+        // exchange action name -> exchange details
         exchange_details: VecMap<ascii::String, ExchangeDetail>,
     }
 
-    /// TODO: is it safe to use `copy` and `drop` here?
+    // TODO: is it safe to use `copy` and `drop` here?
     struct ExchangeDetail has store, copy, drop {
-        /// exchange action name
+        // exchange action name
         action: ascii::String,
-        /// lockup period in days
+        // lockup period in days
         lockup_period_in_days: u64,
-        /// exchange ratio from X to E4C( 1: <value> = $E4C : X )
+        // exchange ratio from X to E4C( 1: <value> = $E4C : X )
         exchange_ratio: u64,
     }
 
     fun init(ctx: &mut TxContext) {
-        /// staking config initialization
+        // staking config initialization
         let config = StakingConfig {
             id: object::new(ctx),
             staking_details: vec_map::empty<u64, StakingDetail>(),
         };
         vec_map::insert(&mut config.staking_details, 30, StakingDetail {
             staking_time: 30, // 30 days
-            annualized_interest_rate_bp: 1000, /// 10%
+            annualized_interest_rate_bp: 1000, // 10%
             staking_quantity_range_min: 1,
             staking_quantity_range_max: 100,
         });
         vec_map::insert(&mut config.staking_details, 60, StakingDetail {
             staking_time: 60, // 60 days
-            annualized_interest_rate_bp: 2000, /// 20%
+            annualized_interest_rate_bp: 2000, // 20%
             staking_quantity_range_min: 100,
             staking_quantity_range_max: 1000,
         });
         vec_map::insert(&mut config.staking_details, 90, StakingDetail {
             staking_time: 90, // 90 days
-            annualized_interest_rate_bp: 3000, /// 30%
+            annualized_interest_rate_bp: 3000, // 30%
             staking_quantity_range_min: 1000,
             staking_quantity_range_max: MAX_U64,
         });
 
-        /// exchange config initialization
+        // exchange config initialization
         let exchange_config = ExchangeConfig {
             id: object::new(ctx),
             exchange_details: vec_map::empty<ascii::String, ExchangeDetail>(),
@@ -99,11 +99,11 @@ module e4c::config {
         transfer::public_share_object(exchange_config);
     }
 
-    /// === Staking Config Functions ===
+    // === Staking Config Functions ===
 
-    /// https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
+    // https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
     public fun get_staking_detail(config: &StakingConfig, staking_time: u64): &StakingDetail {
-        /// TODO: Validation
+        // TODO: Validation
         let index = vec_map::get_idx(&config.staking_details, &staking_time);
         let (_, details) = vec_map::get_entry_by_idx(&config.staking_details, index);
         details
@@ -121,7 +121,7 @@ module e4c::config {
         assert!(annualized_interest_rate_bp <= MAX_BPS, EIncorrectBasisPoints);
         assert!(vec_map::contains(&config.staking_details, &staking_time) == false, EStakingTimeConflict);
         assert!(staking_quantity_range_min < staking_quantity_range_max, EStakingQuantityRangeUnmatch);
-        /// TODO: add other validation like nothing conflict with existing staking details
+        // TODO: add other validation like nothing conflict with existing staking details
 
         vec_map::insert(&mut config.staking_details, staking_time, StakingDetail {
             staking_time,
@@ -129,7 +129,7 @@ module e4c::config {
             staking_quantity_range_min,
             staking_quantity_range_max,
         });
-        /// TODO: add event
+        // TODO: add event
     }
 
     public(friend) fun remove_staking_detail(
@@ -139,21 +139,21 @@ module e4c::config {
     ): StakingDetail {
         let (_, config) = vec_map::remove(&mut config.staking_details, &staking_time);
         config
-        /// TODO: add event
+        // TODO: add event
     }
 
-    /// === Public-View Functions ===
+    // === Public-View Functions ===
 
-    /// TODO: Cosider to move to "staking" module
+    // TODO: Cosider to move to "staking" module
     public fun staking_reward(
         config: &StakingConfig,
         staking_time: u64,
         staking_quantity: u64
     ): u64 {
         let detail = get_staking_detail(config, staking_time);
-        /// Formula: reward = (N * T / 360 * amountE4C) + amountE4C
-        /// N = annualized interest rate in basis points
-        /// T = staking time in days
+        // Formula: reward = (N * T / 360 * amountE4C) + amountE4C
+        // N = annualized interest rate in basis points
+        // T = staking time in days
         let reward = (((detail.annualized_interest_rate_bp as u64) * staking_time / 360) * staking_quantity + staking_quantity) / 1000;
         reward
     }
@@ -170,15 +170,15 @@ module e4c::config {
         detail.annualized_interest_rate_bp
     }
 
-    /// === Exchange Config Functions ===
+    // === Exchange Config Functions ===
 
-    /// https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
+    // https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
     public fun get_exchange_detail(config: &ExchangeConfig, action: ascii::String): ExchangeDetail {
         assert!(vec_map::contains(&config.exchange_details, &action), EExchangeDetailNotFound);
         let index = vec_map::get_idx(&config.exchange_details, &action);
         let (_, detail) = vec_map::get_entry_by_idx(&config.exchange_details, index);
         *detail
-        /// TODO: Can we use `vec_map::try_get` here??
+        // TODO: Can we use `vec_map::try_get` here??
     }
 
     public fun add_exchange_detail(
@@ -192,7 +192,7 @@ module e4c::config {
         assert!(exchange_ratio > 0, EIncorrectBasisPoints);
         assert!(vec_map::contains(&config.exchange_details, &action) == false, EExchangeActionConflict);
 
-        /// TODO: add event
+        // TODO: add event
 
         vec_map::insert(&mut config.exchange_details, action, ExchangeDetail {
             action,
@@ -207,7 +207,7 @@ module e4c::config {
         action: ascii::String
     ): ExchangeDetail {
         let (_, detail) = vec_map::remove(&mut config.exchange_details, &action);
-        /// TODO: add event
+        // TODO: add event
         detail
     }
 
@@ -219,11 +219,11 @@ module e4c::config {
         detail.exchange_ratio
     }
 
-    /// === Helper Functions ===
+    // === Helper Functions ===
 
-    /// Calculate the locking time in milliseconds
-    ///     base_timestamp: the base timestamp in milliseconds
-    ///     locking_days: the number of days to lock
+    // Calculate the locking time in milliseconds
+    //     base_timestamp: the base timestamp in milliseconds
+    //     locking_days: the number of days to lock
     public fun calculate_locking_time(
         base_timestamp: u64,
         locking_days: u64
