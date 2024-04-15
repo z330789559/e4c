@@ -48,7 +48,7 @@ module e4c::config {
         // exchange action name -> exchange details
         exchange_details: VecMap<ascii::String, ExchangeDetail>,
     }
-
+    
     // TODO: is it safe to use `copy` and `drop` here?
     struct ExchangeDetail has store, copy, drop {
         // exchange action name

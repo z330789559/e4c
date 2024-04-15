@@ -7,16 +7,17 @@ module e4c::exchange {
     use sui::clock::{Self, Clock};
     use sui::coin;
     use sui::event;
+    use sui::math::min;
     use sui::object::{Self, ID, UID};
     use sui::transfer;
-    use sui::tx_context::{sender, TxContext};
+    use sui::tx_context::{epoch, sender, TxContext};
     use sui::vec_map::{Self, VecMap};
 
     use e4c::config::{calculate_locking_time,
         exchange_lockup_period_in_days,
         exchange_ratio, ExchangeConfig, ExchangeDetail, get_exchange_detail
     };
-    use e4c::e4c::{E4C, Inventory, take_by_friend};
+    use e4c::e4c::{E4C, Inventory, InventoryCap, take_by_friend};
     use e4c::staking::{offered_bonus_amount, StakingBonusOffer};
 
     // === Errors ===
@@ -25,6 +26,7 @@ module e4c::exchange {
     const EExchangePoolLockupPeriodNotPassed: u64 = 3;
     const EExchangeRequestNotFound: u64 = 4;
     const EExchangeRequestBalanceIsNotZero: u64 = 5;
+    const EDailyWithdrawnLimitExceeded: u64 = 6;
 
     // [Shared Object]: ExchangePool is a shared object that represents the pool of locked tokens.
     // The pool is created by the owner and the owner can lock the tokens in the pool.
@@ -43,6 +45,16 @@ module e4c::exchange {
         detail: ExchangeDetail,
         lockup_end_at: u64,
         e4c_balance: Balance<E4C>,
+    }
+
+    // [Object object]: WithdrawnLimiter is an object object that limits the amount of the withdrawn $E4C.
+    // The limit is set per epoch and the limit is reset every epoch.
+    // This object should be created only by the admin to prevent bypassing the limit.
+    struct WithdrawnLimiter has key {
+        id: UID,
+        withdrawn_limit_per_epoch: u64,
+        last_withdrawn_epoch: u64,
+        withdrawn_amount_in_epoch: u64,
     }
 
     struct ExchangePoolCreated has copy, drop {
@@ -138,17 +150,46 @@ module e4c::exchange {
         pool.total_expected_e4c_amount = pool.total_expected_e4c_amount + expected_e4c_balance;
     }
 
-    // Unlock the tokens in the pool.
+    public fun new_withdrawn_limiter(_: &InventoryCap, limit: u64, ctx: &mut TxContext): WithdrawnLimiter {
+        let id = object::new(ctx);
+
+        // TODO: Add an event
+
+        WithdrawnLimiter {
+            id,
+            withdrawn_limit_per_epoch: limit,
+            last_withdrawn_epoch: 0,
+            withdrawn_amount_in_epoch: 0,
+        }
+    }
+
+    // Withdraw the exchanged E4C from the pool.
     // This function can be called only when the locking period is ended and
     // also by anybody who wants to trigger the unlocking.
-    public fun unlock(pool: &mut ExchangePool, request_id: ID, clock: &Clock, ctx: &mut TxContext) {
+    public fun wihtdraw_exchange(
+        limiter: &mut WithdrawnLimiter,
+        pool: &mut ExchangePool,
+        request_id: ID,
+        clock: &Clock,
+        ctx: &mut TxContext
+    ) {
+        // TODO: need to make sure the assertion is correct
+        assert!(
+            limiter.last_withdrawn_epoch < epoch(
+                ctx
+            ) || limiter.withdrawn_amount_in_epoch < limiter.withdrawn_limit_per_epoch,
+            EDailyWithdrawnLimitExceeded
+        );
         let owner = pool.owner;
         let pool_id = object::uid_to_inner(&pool.id);
         let request = get_exchange_request_mut(pool, request_id);
         assert!(request.lockup_end_at <= clock::timestamp_ms(clock),
             EExchangePoolLockupPeriodNotPassed
         );
-        let balance = balance::value(&request.e4c_balance);
+        let balance = {
+            let remaining_amount = limiter.withdrawn_limit_per_epoch - limiter.withdrawn_amount_in_epoch;
+            min(remaining_amount, balance::value(&request.e4c_balance))
+        };
         event::emit(ExchangePoolUnlocked {
             pool_id,
             request_id,
@@ -157,6 +198,9 @@ module e4c::exchange {
         });
         let coin = coin::take(&mut request.e4c_balance, balance, ctx);
         pool.total_expected_e4c_amount = pool.total_expected_e4c_amount - balance;
+
+        limiter.last_withdrawn_epoch = epoch(ctx);
+        limiter.withdrawn_amount_in_epoch = limiter.withdrawn_amount_in_epoch + balance;
         transfer::public_transfer(coin, owner);
     }
 
