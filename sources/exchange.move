@@ -204,6 +204,7 @@ module e4c::exchange {
         transfer::public_transfer(coin, owner);
     }
 
+    // TODO: Should make the bonus offer alive until the staking period is ended.
     // Withdraw the requesting staking bonus from the pool.
     // This function can be called only the moment when the user stakes the E4C.
     // So only the owner of the pool can call this function.
