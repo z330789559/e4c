@@ -15,6 +15,8 @@ module e4c::payment {
         purpose: String
     }
 
+    // TODO: This can be removed due to the conv that the responsibility should be taken by a marketplace
+    //      which will handle the actual exchange of the receipt for on-chain assets.
     // The struct that will be used as a receipt for the payment.
     struct PaymentReceipt has drop {
         amount: u64,

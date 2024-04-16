@@ -1,3 +1,5 @@
+// TODO: This module could be entirely removed as we agree on the new design
+//      that exchaning(swaping) the E4C for off-chain assets handled on the ambrus backend.
 module e4c::exchange {
 
     use std::ascii;
