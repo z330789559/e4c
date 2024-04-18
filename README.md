@@ -48,12 +48,12 @@ sequenceDiagram
     participant staking
     participant config
     U ->> staking: request to stake $E4C
-    staking ->> staking: create a new staking pool
-    staking ->> config: get staking pool configuration
+    staking ->> staking: create a new StakingPool
+    staking ->> config: get StakingRule
     config ->> staking: return staking rate and expected reward
-    staking ->> e4c: claim $E4C reward from inventory
-    e4c ->> staking: inject $E4C reward to staking pool
-    staking ->> U: transfer the staking pool
+    staking ->> e4c: claim $E4C reward from GameLiquidityPool
+    e4c ->> staking: inject $E4C reward to StakingPool
+    staking ->> U: transfer the StakingPool
 ```
 
 ### Unstake and Claim Reward
@@ -66,11 +66,11 @@ sequenceDiagram
     participant e4c
     participant staking
     participant config
-    U ->> staking: request to unstake $E4C from the pool
-    staking ->> staking: validate unstake request
+    U ->> staking: request to unstake $E4C from StakingPool
+    staking ->> staking: validate unstaking request
     staking ->> U: transfer staked and reward $E4C
     alt optional
-        U ->> staking: destroy empty staking pool
+        U ->> staking: destroy empty StakingPool
         staking ->> U: get storage rebate
     end
 ```
@@ -85,5 +85,5 @@ sequenceDiagram
     participant config
     A ->> config: add/remove configure staking pool
     config ->> config: set staking pool configuration
-    Note over config: The update does not affect existing staking pool
+    Note over config: The update does not affect on existing StakingPool
 ```
