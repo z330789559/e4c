@@ -19,7 +19,7 @@ The following sequence diagram illustrates the process of publishing a package a
 ```mermaid
 sequenceDiagram
     actor A as Ambrus
-    actor M as MSage
+    actor M as MSafe
     participant e4c as e4c
     participant staking as staking
     participant config as config
@@ -69,10 +69,6 @@ sequenceDiagram
     U ->> staking: request to unstake $E4C from StakingPool
     staking ->> staking: validate unstaking request
     staking ->> U: transfer staked and reward $E4C
-    alt optional
-        U ->> staking: destroy empty StakingPool
-        staking ->> U: get storage rebate
-    end
 ```
 
 ### Configure Staking Pool

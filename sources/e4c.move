@@ -8,7 +8,6 @@ module e4c::e4c {
     use sui::tx_context::{sender, TxContext};
 
     friend e4c::staking;
-    friend e4c::exchange;
 
     // === Errors ===
     // Error code for when the amount is too low.
@@ -27,15 +26,11 @@ module e4c::e4c {
 
     struct E4C has drop {}
 
-    // [Owned Object]: InventoryCap is a cap for the E4C tokens.
-    struct InventoryCap has key, store {
-        id: UID,
-        // TODO: Consider adding the following field for visibility control.
-        // for: ID or vector<ID>
-    }
+    // [Owned Object]: AdminCap is a capability that allows a holder to access the entire $E4C token configuration
+    struct AdminCap has key, store { id: UID }
 
-    // [Shared Object]: Inventory is a store of minted E4C tokens.
-    struct Inventory has key, store {
+    // [Shared Object]: GameLiquidityPool is a store of minted E4C tokens.
+    struct GameLiquidityPool has key, store {
         id: UID,
         balance: Balance<E4C>,
         total_supply: Supply<E4C>
@@ -53,57 +48,57 @@ module e4c::e4c {
         );
         transfer::public_freeze_object(metadata);
 
-        // Mint all the tokens to the Inventory and burn the TreasuryCap to prevent further minting and burning.
+        // Mint all the tokens to the GameLiquidityPool and burn the TreasuryCap to prevent further minting and burning.
         let coin = coin::mint(&mut treasury, E4CTokenMaxSupply, ctx);
         let total_supply = coin::treasury_into_supply(treasury);
 
-        transfer::public_transfer(InventoryCap { id: object::new(ctx) }, sender(ctx));
+        transfer::public_transfer(AdminCap { id: object::new(ctx) }, sender(ctx));
         transfer::public_share_object(
-            Inventory { id: object::new(ctx), balance: coin::into_balance(coin), total_supply }
+            GameLiquidityPool { id: object::new(ctx), balance: coin::into_balance(coin), total_supply }
         );
     }
 
     // === Public Functions ===
 
-    // Take E4C tokens from the Inventory with capability check.
-    public fun take_from_inventory(
-        _: &InventoryCap,
-        inventory: &mut Inventory,
-        amount: u64,
-        ctx: &mut TxContext
-    ): Coin<E4C> {
-        internal_take_from_inventory(inventory, amount, ctx)
-    }
+    // // Take E4C tokens from the GameLiquidityPool with capability check.
+    // public fun take_from_liquidity_pool(
+    //     _: &AdminCap,
+    //     liquidity_pool: &mut GameLiquidityPool,
+    //     amount: u64,
+    //     ctx: &mut TxContext
+    // ): Coin<E4C> {
+    //     internal_take_from_liquidity_pool(liquidity_pool, amount, ctx)
+    // }
 
-    // Take E4C tokens from the Inventory without capability check.
+    // Take E4C tokens from the GameLiquidityPool without capability check.
     // This function is only accessible to the friend module.
-    public(friend) fun take_by_friend(
-        inventory: &mut Inventory,
+    public(friend) fun e4c_tokens_request(
+        liquidity_pool: &mut GameLiquidityPool,
         amount: u64,
         ctx: &mut TxContext
     ): Coin<E4C> {
-        internal_take_from_inventory(inventory, amount, ctx)
+        internal_take_from_pool(liquidity_pool, amount, ctx)
     }
 
-    // Put back E4C tokens to the Inventory without capability check.
+    // Put back E4C tokens to the GameLiquidityPool without capability check.
     // This function can be called by anyone.
-    public fun put_back(inventory: &mut Inventory, coin: Coin<E4C>) {
+    public fun place_in_pool(liquidity_pool: &mut GameLiquidityPool, coin: Coin<E4C>) {
         assert!(coin::value(&coin) > 0, EAmountMustBeGreaterThanZero);
 
         // TODO: Consider adding an event
-        balance::join(&mut inventory.balance, coin::into_balance(coin));
+        balance::join(&mut liquidity_pool.balance, coin::into_balance(coin));
     }
 
     // === Private Functions ===
-    fun internal_take_from_inventory(
-        inventory: &mut Inventory,
+    fun internal_take_from_pool(
+        liquidity_pool: &mut GameLiquidityPool,
         amount: u64,
         ctx: &mut TxContext
     ): Coin<E4C> {
         assert!(amount > 0, EAmountMustBeGreaterThanZero);
-        assert!(amount <= balance::value(&inventory.balance), EAmountTooHigh);
+        assert!(amount <= balance::value(&liquidity_pool.balance), EAmountTooHigh);
 
-        let coin = coin::take(&mut inventory.balance, amount, ctx);
+        let coin = coin::take(&mut liquidity_pool.balance, amount, ctx);
         coin
     }
 
