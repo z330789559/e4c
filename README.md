@@ -12,7 +12,7 @@ Modules high level description:
 
 ## Sequence Diagram
 
-### Publish Package and Mint $E4C
+### Publish e4c Package and mint $E4C
 
 The following sequence diagram illustrates the process of publishing a package and minting the E4C token.
 
@@ -20,20 +20,35 @@ The following sequence diagram illustrates the process of publishing a package a
 sequenceDiagram
     actor A as Admin
     participant e4c as e4c
-    participant staking as staking
-    participant config as config
     A ->> e4c: publish package
-    box Gray Package
+    box White e4c package
         participant e4c as e4c
-        participant staking as staking
-        participant config as config
     end
     e4c ->> e4c: mint all $E4C
     e4c ->> e4c: freeze metadata and <br />burn treasury
+    e4c ->> e4c: create and freeze E4CTotalSupply
+    e4c ->> A: transfer all $E4C
+```
+
+### Publish e4c_staking package
+
+The following sequence diagram illustrates the process of publishing a package for the staking module.
+
+Make sure to publish the e4c package first and add the e4c_package dependency
+to [./e4c_staking/Move.toml](e4c_staking/Move.toml).
+
+```mermaid
+sequenceDiagram
+    actor A as Admin
+    participant staking as staking
+    participant config as config
+    A ->> staking: publish package
+    box Gray e4c_staking package
+        participant staking as staking
+        participant config as config
+    end
     staking ->> staking: create and share <br />GameLiquidityPool
     staking ->> staking: create AdminCap
-    e4c ->> A: transfer all $E4C
-    staking ->> A: transfer AdminCap
     config ->> config: create and share <br />StakingConfig
     config ->> config: setup pre-defined staking rule
 ```
@@ -54,22 +69,20 @@ sequenceDiagram
     A ->> staking: put $E4C to GameLiquidityPool
 ```
 
-### Stake and Unstake $E4C
+### Stake $E4C
 
 The following sequence diagram illustrates the process of staking $E4C token.
 
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant e4c
     participant staking
     participant config
     U ->> staking: request to stake $E4C
     staking ->> staking: create a new StakingReceipt
     staking ->> config: get StakingRule
-    config ->> staking: return staking rate and expected reward
-    staking ->> e4c: claim $E4C reward from GameLiquidityPool
-    e4c ->> staking: inject $E4C reward to StakingReceipt
+    config ->> staking: return staking rate and <br />expected reward
+    staking ->> staking: inject $E4C reward <br />from GameLiquidityPool <br />to StakingReceipt
     staking ->> U: transfer the StakingReceipt
 ```
 
@@ -80,7 +93,6 @@ The following sequence diagram illustrates the process of unstaking $E4C token.
 ```mermaid
 sequenceDiagram
     actor U as User
-    participant e4c
     participant staking
     participant config
     Note over U: w/StakingReceipt
@@ -96,7 +108,7 @@ The following sequence diagram illustrates the process of configuring the stakin
 ```mermaid
 sequenceDiagram
     actor A as Admin
-    participant config as C
+    participant C as config
     Note over A: w/AdminCap
     A ->> C: add/remove StakingConfig
     C ->> C: set new staking configuration
