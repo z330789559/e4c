@@ -95,7 +95,7 @@ The following sequence diagram illustrates the process of configuring the stakin
 
 ```mermaid
 sequenceDiagram
-    actor A as Ambrus
+    actor A as Admin
     participant config as C
     Note over A: w/AdminCap
     A ->> C: add/remove StakingConfig
