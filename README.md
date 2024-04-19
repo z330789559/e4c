@@ -6,9 +6,11 @@ This repository contains the smart contracts for the Ambrus $E4C token.
 
 Modules high level description:
 
-- E4C Module: Handles the creation and minting of E4C tokens.
-- Staking Module: Handles staking of E4C tokens for veE4C, including reward calculations.
-- Config Module: Handles the configuration of the staking pool
+- E4C Package: Handles the creation and minting of E4C tokens.
+    - E4C Module: Handles the creation and minting of E4C tokens.
+- E4C Staking Package: Handles the staking of E4C tokens.
+    - Staking Module: Handles staking of E4C tokens for veE4C, including reward injection.
+    - Config Module: Handles the configuration of the staking pool.
 
 ## Sequence Diagram
 
