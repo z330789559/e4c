@@ -1,4 +1,4 @@
-module e4c::staking {
+module e4c_staking::staking {
     use sui::balance;
     use sui::balance::Balance;
     use sui::clock::{Self, Clock};
@@ -8,14 +8,14 @@ module e4c::staking {
     use sui::transfer;
     use sui::tx_context::{sender, TxContext};
 
-    use e4c::config::{
+    use e4c::e4c::E4C;
+    use e4c_staking::config::{
         annualized_interest_rate_bp,
         calculate_locking_time,
         get_staking_rule,
         staking_quantity_range,
-        staking_reward, StakingConfig
-    };
-    use e4c::e4c::E4C;
+        staking_reward,
+        StakingConfig};
 
     // === Errors ===
     const EStakingQuantityTooLow: u64 = 0;

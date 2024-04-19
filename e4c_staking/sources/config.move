@@ -1,4 +1,4 @@
-module e4c::config {
+module e4c_staking::config {
     use sui::object::{Self, UID};
     use sui::package;
     use sui::transfer;
