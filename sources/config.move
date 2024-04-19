@@ -1,16 +1,16 @@
 module e4c::config {
     use sui::object::{Self, UID};
+    use sui::package;
     use sui::transfer;
-    use sui::tx_context::TxContext;
+    use sui::tx_context::{sender, TxContext};
     use sui::vec_map::{Self, VecMap};
-
-    use e4c::e4c::AdminCap;
 
     // === Errors ===
     const EIncorrectBasisPoints: u64 = 0;
     const EStakingTimeMustBeGreaterThanZero: u64 = 1;
     const EStakingTimeConflict: u64 = 2;
     const EStakingQuantityRangeUnmatch: u64 = 3;
+    const EStakingTimeNotFound: u64 = 4;
 
     // === Constants ===
     const MAX_U64: u64 = 18446744073709551615;
@@ -18,6 +18,12 @@ module e4c::config {
 
 
     // === Structs ===
+
+    // [One Time Witness] CONFIG is a one-time witness that is used to initialize the e4c package
+    struct CONFIG has drop {}
+
+    // [Owned Object]: AdminCap is a capability that allows a holder to access the entire $E4C token configuration
+    struct AdminCap has key, store { id: UID }
 
     // [Shared Object]: StakingConfig is a configuration for staking
     struct StakingConfig has key, store {
@@ -36,7 +42,7 @@ module e4c::config {
         staking_quantity_range_max: u64,
     }
 
-    fun init(ctx: &mut TxContext) {
+    fun init(otw: CONFIG, ctx: &mut TxContext) {
         // staking config initialization
         let config = StakingConfig {
             id: object::new(ctx),
@@ -62,13 +68,15 @@ module e4c::config {
         });
 
         transfer::public_share_object(config);
+        transfer::public_transfer(AdminCap { id: object::new(ctx) }, sender(ctx));
+        package::claim_and_keep(otw, ctx);
     }
 
     // === Staking Config Functions ===
 
     // https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
     public fun get_staking_rule(config: &StakingConfig, staking_time: u64): &StakingRule {
-        // TODO: Validation
+        assert!(vec_map::contains(&config.staking_rules, &staking_time), EStakingTimeNotFound);
         let index = vec_map::get_idx(&config.staking_rules, &staking_time);
         let (_, rules) = vec_map::get_entry_by_idx(&config.staking_rules, index);
         rules
