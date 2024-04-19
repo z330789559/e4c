@@ -3,7 +3,7 @@ module e4c::config_tests {
     use sui::test_utils::{assert_eq, destroy};
     use sui::tx_context;
 
-    use e4c::config;
+    use e4c_staking::config;
 
     #[test]
     fun test_reward() {
