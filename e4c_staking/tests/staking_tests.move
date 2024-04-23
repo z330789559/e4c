@@ -3,10 +3,8 @@ module e4c_staking::staking_tests {
     use sui::balance::{Self};
     use sui::coin::{Self};
     use sui::clock::{Self};
-    use std::debug;
     use sui::test_utils::{assert_eq};
     use sui::test_scenario as ts;
-    
     
     use e4c_staking::staking::{Self, GameLiquidityPool, StakingReceipt};
     use e4c_staking::config::{StakingConfig};
@@ -20,11 +18,7 @@ module e4c_staking::staking_tests {
     const BOB_BALANCE: u64 = 300;
     const BOB_STAKED_AMOUNT : u64 = 100;
     const BOB_STAKING_PERIOD: u64 = 60;
-
-    const CHRIS_ADDRESS: address = @0xCCCC;
-    const CHRIS_BALANCE: u64 = 2000;
-    const CHRIS_STAKING_PERIOD: u64 = 90;
-
+    
     const MINTING_AMOUNT: u64 = 100_000_000;
     
     #[test]
