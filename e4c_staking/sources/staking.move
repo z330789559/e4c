@@ -188,4 +188,15 @@ module e4c_staking::staking {
         let coin = coin::take(&mut liquidity_pool.balance, amount, ctx);
         coin
     }
+    // === Public view Functions ===
+    public fun game_liquidity_pool_balance(liquidity_pool: &GameLiquidityPool): u64 {
+        balance::value(&liquidity_pool.balance)
+    }
+
+    // === Testing Functions ===
+
+    #[test_only]
+    public fun init_for_testing(ctx: &mut TxContext) {
+       init(ctx);
+    }
 }
