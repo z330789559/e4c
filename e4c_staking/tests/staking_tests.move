@@ -5,12 +5,12 @@ module e4c_staking::staking_tests {
     use sui::clock::{Self};
     use sui::test_utils::{assert_eq};
     use sui::test_scenario as ts;
-    
+    use sui::test_scenario::{Scenario};
+
     use e4c_staking::staking::{Self, GameLiquidityPool, StakingReceipt};
     use e4c_staking::config::{StakingConfig};
     use e4c::e4c::E4C;
-    use sui::test_scenario::{Scenario};
-
+    
     const TREASURY_ADDRESS: address = @0xAAAA;
     const CLOCK_SET_TIMESTAMP: u64 = 2024;
 
@@ -18,7 +18,7 @@ module e4c_staking::staking_tests {
     const BOB_BALANCE: u64 = 300;
     const BOB_STAKED_AMOUNT : u64 = 100;
     const BOB_STAKING_PERIOD: u64 = 60;
-    
+
     const MINTING_AMOUNT: u64 = 100_000_000;
     
     #[test]
@@ -80,8 +80,6 @@ module e4c_staking::staking_tests {
             let received_staking_receipt = ts::take_from_sender<StakingReceipt>(&scenario);
             // ===== Start unstaking =====
             clock::increment_for_testing(&mut clock, 5184000000);
-            
-            
             let reward_coin = staking::unstake(received_staking_receipt, &clock, ts::ctx(&mut scenario));
             
             let expected_total_return_amount : u64 = 100 + 33;

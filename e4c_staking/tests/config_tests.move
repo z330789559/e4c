@@ -1,9 +1,9 @@
 #[test_only]
 module e4c_staking::config_tests {
     use sui::test_utils::{assert_eq, destroy};
+    use sui::test_scenario as ts;
 
     use e4c_staking::config::{AdminCap, StakingConfig, Self};
-    use sui::test_scenario as ts;
 
     const AMBRUS_ADDRESS: address = @0xAAAA;
 
@@ -36,6 +36,7 @@ module e4c_staking::config_tests {
         {
             config::init_for_testing(ts::ctx(&mut scenario));
         };
+        
         ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
         {   
             let mut staking_config: StakingConfig = ts::take_shared(&scenario);
@@ -78,8 +79,7 @@ module e4c_staking::config_tests {
             config::init_for_testing(ts::ctx(&mut scenario));
         };
 
-        ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
-        
+        ts::next_tx(&mut scenario, AMBRUS_ADDRESS);      
         {   
             let mut staking_config: StakingConfig = ts::take_shared(&scenario);
             let cap: AdminCap = ts::take_from_sender(&scenario);
