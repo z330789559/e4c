@@ -4,8 +4,6 @@ module e4c_staking::staking {
     use sui::clock::{Self, Clock};
     use sui::coin::{Self, Coin};
     use sui::event;
-    // use sui::object;
-    // use sui::transfer;
     use sui::tx_context::{sender};
 
     use e4c::e4c::E4C;
@@ -121,6 +119,15 @@ module e4c_staking::staking {
             staking_end_at: calculate_locking_time(staked_at, staking_days),
             reward: coin::into_balance(e4c_tokens_request(liquidity_pool, reward, ctx))
         }
+    }
+    //transfer::transfer(receipt_obj, BOB_ADDRESS);
+   │// Invalid private transfer. 
+   // The function 'sui::transfer::transfer' is restricted to being called in the object's module, '(e4c_staking=0x0)::staking'
+    public fun transfer_staking_receipt(
+        receipt: StakingReceipt,
+        staker_addres: address,
+    ) {
+       transfer::transfer(receipt, staker_addres);
     }
 
     // Unstake the tokens from the receipt.

@@ -1,7 +1,5 @@
 module e4c_staking::config {
-    // use sui::object;
     use sui::package;
-    // use sui::transfer;
     use sui::tx_context::{sender};
     use sui::vec_map::{Self, VecMap};
 
