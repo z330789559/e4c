@@ -1,7 +1,7 @@
 module e4c::e4c {
     use std::option;
 
-    use sui::balance::Supply;
+    use sui::balance::{Self, Supply};
     use sui::coin::Self;
     use sui::object;
     use sui::object::UID;
@@ -51,4 +51,9 @@ module e4c::e4c {
 
     #[test_only]
     public fun init_for_testing(ctx: &mut TxContext) { init(E4C {}, ctx); }
+
+    #[test_only]
+    public fun get_total_supply(meta: &E4CTotalSupply): u64 {
+        balance::supply_value(&meta.total_supply)
+    }
 }
