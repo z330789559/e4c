@@ -1,7 +1,7 @@
 module e4c::e4c {
     use std::option;
 
-    use sui::balance::{Self, Supply};
+    use sui::balance::{Supply};
     use sui::coin::Self;
     use sui::object;
     use sui::object::UID;
