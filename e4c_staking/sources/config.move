@@ -82,7 +82,7 @@ module e4c_staking::config {
         rules
     }
 
-    public(friend) fun add_staking_rule(
+    public fun add_staking_rule(
         _: &AdminCap,
         config: &mut StakingConfig,
         staking_time: u64,
@@ -104,7 +104,7 @@ module e4c_staking::config {
         // TODO: add event
     }
 
-    public(friend) fun remove_staking_rule(
+    public fun remove_staking_rule(
         _: &AdminCap,
         config: &mut StakingConfig,
         staking_time: u64
@@ -177,5 +177,10 @@ module e4c_staking::config {
         };
         vec_map::insert(&mut config.staking_rules, staking_time, rules);
         config
+    }
+
+    #[test_only]
+    public fun init_for_testing(ctx: &mut TxContext) {
+        init(CONFIG{}, ctx)
     }
 }
