@@ -72,7 +72,7 @@ module e4c_staking::config_tests {
     }
 
     #[test]
-    fun test_check_removed_existing_staking_rule() {
+    fun test_check_details_removed_existing_staking_rule() {
         let scenario = ts::begin(AMBRUS_ADDRESS);
         ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
         {
