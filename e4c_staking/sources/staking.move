@@ -4,9 +4,9 @@ module e4c_staking::staking {
     use sui::clock::{Self, Clock};
     use sui::coin::{Self, Coin};
     use sui::event;
-    use sui::object::{Self, ID, UID};
-    use sui::transfer;
-    use sui::tx_context::{sender, TxContext};
+    // use sui::object;
+    // use sui::transfer;
+    use sui::tx_context::{sender};
 
     use e4c::e4c::E4C;
     use e4c_staking::config::{
@@ -27,7 +27,7 @@ module e4c_staking::staking {
     // [Owned Object]: StakingReceipt represents a receipt of staked tokens.
     // The receipt will have complete setup upon creation including rewards since it's fixed.
     // Once it's created, you can only unstake the tokens when the staking time is ended.
-    struct StakingReceipt has key {
+    public struct StakingReceipt has key {
         id: UID,
         // Amount of tokens staked in the receipt
         amount_staked: Balance<E4C>,
@@ -47,33 +47,33 @@ module e4c_staking::staking {
     }
 
     // [Shared Object]: GameLiquidityPool is a store of minted E4C tokens.
-    struct GameLiquidityPool has key, store {
+    public struct GameLiquidityPool has key, store {
         id: UID,
         balance: Balance<E4C>,
     }
 
     // Event emitted when a new staking receipt is created
-    struct Staked has copy, drop {
+    public struct Staked has copy, drop {
         receipt_id: ID,
         owner: address,
         amount: u64,
     }
 
     // Event emitted when unstaking tokens from a receipt
-    struct Unstaked has copy, drop {
+    public struct Unstaked has copy, drop {
         receipt_id: ID,
         owner: address,
         amount: u64,
     }
 
     // Event emitted when E4C tokens are placed in the GameLiquidityPool
-    struct PoolPlaced has copy, drop {
+    public struct PoolPlaced has copy, drop {
         sender: address,
         amount: u64,
     }
 
     // Event emitted when E4C tokens are taken from the GameLiquidityPool
-    struct PoolWithdrawn has copy, drop {
+    public struct PoolWithdrawn has copy, drop {
         sender: address,
         amount: u64,
     }
@@ -152,9 +152,10 @@ module e4c_staking::staking {
         });
         object::delete(id);
 
-        let coin = coin::from_balance(amount_staked, ctx);
-        coin::join(&mut coin, coin::from_balance(reward, ctx));
-        coin
+        let mut total_reward_coin = coin::from_balance(amount_staked, ctx);
+        let reward_amount = coin::from_balance(reward, ctx);
+        coin::join(&mut total_reward_coin, reward_amount);
+        total_reward_coin
     }
 
     // Put back E4C tokens to the GameLiquidityPool without capability check.
@@ -193,10 +194,22 @@ module e4c_staking::staking {
         balance::value(&liquidity_pool.balance)
     }
 
+    public fun staking_receipt_data(receipt: &StakingReceipt): (u64, u64, u64, u16, u64) {
+        (
+            balance::value(&receipt.amount_staked),
+            receipt.staked_at,
+            receipt.applied_staking_days,
+            receipt.applied_interest_rate_bp,
+            receipt.staking_end_at
+        )
+    }
+
     // === Testing Functions ===
 
+    #[test_only] use e4c_staking::config::init_for_testing as config_init;
     #[test_only]
     public fun init_for_testing(ctx: &mut TxContext) {
        init(ctx);
+       config_init(ctx);
     }
 }

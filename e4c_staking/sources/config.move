@@ -1,8 +1,8 @@
 module e4c_staking::config {
-    use sui::object::{Self, UID};
+    // use sui::object;
     use sui::package;
-    use sui::transfer;
-    use sui::tx_context::{sender, TxContext};
+    // use sui::transfer;
+    use sui::tx_context::{sender};
     use sui::vec_map::{Self, VecMap};
 
     // === Errors ===
@@ -20,19 +20,19 @@ module e4c_staking::config {
     // === Structs ===
 
     // [One Time Witness] CONFIG is a one-time witness that is used to initialize the e4c package
-    struct CONFIG has drop {}
+    public struct CONFIG has drop {}
 
     // [Owned Object]: AdminCap is a capability that allows a holder to access the entire $E4C token configuration
-    struct AdminCap has key, store { id: UID }
+    public struct AdminCap has key, store { id: UID }
 
     // [Shared Object]: StakingConfig is a configuration for staking
-    struct StakingConfig has key, store {
+    public struct StakingConfig has key, store {
         id: UID,
         // staking time in days -> staking rules
         staking_rules: VecMap<u64, StakingRule>,
     }
 
-    struct StakingRule has store, drop {
+    public struct StakingRule has store, drop {
         // staking time in days
         staking_time: u64,
         // annualized interest rate in basis points
@@ -44,7 +44,7 @@ module e4c_staking::config {
 
     fun init(otw: CONFIG, ctx: &mut TxContext) {
         // staking config initialization
-        let config = StakingConfig {
+        let mut config = StakingConfig {
             id: object::new(ctx),
             staking_rules: vec_map::empty<u64, StakingRule>(),
         };
@@ -171,7 +171,7 @@ module e4c_staking::config {
     public fun new_staking_config(
         rules: StakingRule, staking_time: u64, ctx: &mut TxContext
     ): StakingConfig {
-        let config = StakingConfig {
+        let mut config = StakingConfig {
             id: object::new(ctx),
             staking_rules: vec_map::empty(),
         };

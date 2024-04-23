@@ -1,7 +1,6 @@
 #[test_only]
 module e4c_staking::config_tests {
     use sui::test_utils::{assert_eq, destroy};
-    use sui::tx_context;
 
     use e4c_staking::config::{AdminCap, StakingConfig, Self};
     use sui::test_scenario as ts;
@@ -10,7 +9,7 @@ module e4c_staking::config_tests {
 
     #[test]
     fun test_reward() {
-        let ctx = tx_context::dummy();
+        let mut ctx = tx_context::dummy();
         let (staking_quantity,
             staking_time,
             annualized_interest_rate_bp,
@@ -33,13 +32,13 @@ module e4c_staking::config_tests {
 
     #[test]
     fun test_add_new_staking_rule() {
-        let scenario = ts::begin(AMBRUS_ADDRESS);
+        let mut scenario = ts::begin(AMBRUS_ADDRESS);
         {
             config::init_for_testing(ts::ctx(&mut scenario));
         };
         ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
         {   
-            let staking_config: StakingConfig = ts::take_shared(&scenario);
+            let mut staking_config: StakingConfig = ts::take_shared(&scenario);
             let cap: AdminCap = ts::take_from_sender(&scenario);
             let new_staking_time = 300;
             let new_annualized_interest_rate_bp = 3610;
@@ -73,7 +72,7 @@ module e4c_staking::config_tests {
 
     #[test]
     fun test_check_details_removed_existing_staking_rule() {
-        let scenario = ts::begin(AMBRUS_ADDRESS);
+        let mut scenario = ts::begin(AMBRUS_ADDRESS);
         ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
         {
             config::init_for_testing(ts::ctx(&mut scenario));
@@ -82,7 +81,7 @@ module e4c_staking::config_tests {
         ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
         
         {   
-            let staking_config: StakingConfig = ts::take_shared(&scenario);
+            let mut staking_config: StakingConfig = ts::take_shared(&scenario);
             let cap: AdminCap = ts::take_from_sender(&scenario);
             let staking_time = 90;
             let removing_range_min_value = 1000;
@@ -103,7 +102,7 @@ module e4c_staking::config_tests {
 
     #[test,expected_failure(abort_code = e4c_staking::config::EStakingTimeNotFound)]
     fun test_remove_existing_staking_rule() {
-        let scenario = ts::begin(AMBRUS_ADDRESS);
+        let mut scenario = ts::begin(AMBRUS_ADDRESS);
         ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
         {
             config::init_for_testing(ts::ctx(&mut scenario));
@@ -112,7 +111,7 @@ module e4c_staking::config_tests {
         ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
         
         {   
-            let staking_config: StakingConfig = ts::take_shared(&scenario);
+            let mut staking_config: StakingConfig = ts::take_shared(&scenario);
             let cap: AdminCap = ts::take_from_sender(&scenario);
             let staking_time = 30;
             
