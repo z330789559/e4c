@@ -10,7 +10,7 @@ module e4c::e4c_tests {
     #[test]
     // Ref: https://docs.sui.io/concepts/object-ownership/immutable#test-immutable-object
     fun test_object_is_freezing() {
-        let scenario = ts::begin(AMBRUS_ADDRESS);
+        let mut scenario = ts::begin(AMBRUS_ADDRESS);
         {
             e4c::init_for_testing(ts::ctx(&mut scenario));
         };
