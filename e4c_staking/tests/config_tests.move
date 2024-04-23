@@ -34,7 +34,6 @@ module e4c_staking::config_tests {
     #[test]
     fun test_add_new_staking_rule() {
         let scenario = ts::begin(AMBRUS_ADDRESS);
-        ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
         {
             config::init_for_testing(ts::ctx(&mut scenario));
         };
