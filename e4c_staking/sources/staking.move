@@ -121,7 +121,7 @@ module e4c_staking::staking {
         }
     }
     //transfer::transfer(receipt_obj, BOB_ADDRESS);
-   │// Invalid private transfer. 
+   // Invalid private transfer. 
    // The function 'sui::transfer::transfer' is restricted to being called in the object's module, '(e4c_staking=0x0)::staking'
     public fun transfer_staking_receipt(
         receipt: StakingReceipt,
@@ -201,13 +201,14 @@ module e4c_staking::staking {
         balance::value(&liquidity_pool.balance)
     }
 
-    public fun staking_receipt_data(receipt: &StakingReceipt): (u64, u64, u64, u16, u64) {
+    public fun staking_receipt_data(receipt: &StakingReceipt): (u64, u64, u64, u16, u64, u64) {
         (
             balance::value(&receipt.amount_staked),
             receipt.staked_at,
             receipt.applied_staking_days,
             receipt.applied_interest_rate_bp,
-            receipt.staking_end_at
+            receipt.staking_end_at,
+            balance::value(&receipt.reward)
         )
     }
 
