@@ -11,10 +11,8 @@ module e4c_staking::staking_tests {
     use e4c_staking::config::{StakingConfig};
     use e4c::e4c::E4C;
     
-    const TREASURY_ADDRESS: address = @0xAAAA;
     const CLOCK_SET_TIMESTAMP: u64 = 2024;
 
-    const BOB_ADDRESS: address = @0xBBBB;
     const BOB_BALANCE: u64 = 300;
     const BOB_STAKED_AMOUNT : u64 = 100;
     const BOB_STAKING_PERIOD: u64 = 60;
@@ -24,15 +22,15 @@ module e4c_staking::staking_tests {
     #[test]
     public fun test_staking_and_unstaking() {
         let mut scenario = scenario();
-        ts::next_tx(&mut scenario, TREASURY_ADDRESS);
+        ts::next_tx(&mut scenario, @treasury);
          {
             set_up_initial_condition_for_testing(
                 &mut scenario,
-                TREASURY_ADDRESS,
+                @treasury,
                 MINTING_AMOUNT,
             )
          };
-         ts::next_tx(&mut scenario, BOB_ADDRESS);
+         ts::next_tx(&mut scenario, @bob);
          {  
             // ===== Start staking BOB ADDRESS=====
             let mut pool: GameLiquidityPool = ts::take_shared(&scenario);
@@ -63,7 +61,7 @@ module e4c_staking::staking_tests {
             assert_eq (interest_rate, 2000);
             assert_eq (staking_finish_time, CLOCK_SET_TIMESTAMP + 5184000000);
             assert_eq (reward_amount, 33);
-            staking::transfer_staking_receipt(receipt_obj, BOB_ADDRESS);
+            staking::transfer_staking_receipt(receipt_obj, @bob);
            
             balance::destroy_for_testing(bob_balance);
             clock::destroy_for_testing(clock); 
@@ -72,7 +70,7 @@ module e4c_staking::staking_tests {
              
          };
          // ===== Start unstaking BOB ADDRESS=====
-         ts::next_tx(&mut scenario, BOB_ADDRESS);
+         ts::next_tx(&mut scenario, @bob);
          {
 
             let mut clock = clock::create_for_testing(ts::ctx(&mut scenario));
@@ -86,7 +84,7 @@ module e4c_staking::staking_tests {
             let reward_value = coin::value(&reward_coin);
             assert_eq(expected_total_return_amount, reward_value);
 
-            transfer::public_transfer(reward_coin, BOB_ADDRESS);
+            transfer::public_transfer(reward_coin, @bob);
             clock::destroy_for_testing(clock); 
          };
         ts::end(scenario);

@@ -5,8 +5,6 @@ module e4c_staking::config_tests {
 
     use e4c_staking::config::{AdminCap, StakingConfig, Self};
 
-    const AMBRUS_ADDRESS: address = @0xAAAA;
-
     #[test]
     fun test_reward() {
         let mut ctx = tx_context::dummy();
@@ -32,12 +30,12 @@ module e4c_staking::config_tests {
 
     #[test]
     fun test_add_new_staking_rule() {
-        let mut scenario = ts::begin(AMBRUS_ADDRESS);
+        let mut scenario = ts::begin(@ambrus);
         {
             config::init_for_testing(ts::ctx(&mut scenario));
         };
-        
-        ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
+
+        ts::next_tx(&mut scenario, @ambrus);
         {   
             let mut staking_config: StakingConfig = ts::take_shared(&scenario);
             let cap: AdminCap = ts::take_from_sender(&scenario);
@@ -73,13 +71,13 @@ module e4c_staking::config_tests {
 
     #[test]
     fun test_check_details_removed_existing_staking_rule() {
-        let mut scenario = ts::begin(AMBRUS_ADDRESS);
-        ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
+        let mut scenario = ts::begin(@ambrus);
+        ts::next_tx(&mut scenario, @ambrus);
         {
             config::init_for_testing(ts::ctx(&mut scenario));
         };
 
-        ts::next_tx(&mut scenario, AMBRUS_ADDRESS);      
+        ts::next_tx(&mut scenario, @ambrus);      
         {   
             let mut staking_config: StakingConfig = ts::take_shared(&scenario);
             let cap: AdminCap = ts::take_from_sender(&scenario);
@@ -102,13 +100,13 @@ module e4c_staking::config_tests {
 
     #[test,expected_failure(abort_code = e4c_staking::config::EStakingTimeNotFound)]
     fun test_remove_existing_staking_rule() {
-        let mut scenario = ts::begin(AMBRUS_ADDRESS);
-        ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
+        let mut scenario = ts::begin(@ambrus);
+        ts::next_tx(&mut scenario, @ambrus);
         {
             config::init_for_testing(ts::ctx(&mut scenario));
         };
 
-        ts::next_tx(&mut scenario, AMBRUS_ADDRESS);
+        ts::next_tx(&mut scenario, @ambrus);
         
         {   
             let mut staking_config: StakingConfig = ts::take_shared(&scenario);
