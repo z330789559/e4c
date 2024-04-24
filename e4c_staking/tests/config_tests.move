@@ -1,5 +1,6 @@
 #[test_only]
 module e4c_staking::config_tests {
+    use sui::clock::{Self};
     use sui::test_utils::{assert_eq, destroy};
     use sui::test_scenario as ts;
 
@@ -38,6 +39,7 @@ module e4c_staking::config_tests {
         ts::next_tx(&mut scenario, @ambrus);
         {   
             let mut staking_config: StakingConfig = ts::take_shared(&scenario);
+            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
             let cap: AdminCap = ts::take_from_sender(&scenario);
             let new_staking_time = 300;
             let new_annualized_interest_rate_bp = 3610;
@@ -50,7 +52,8 @@ module e4c_staking::config_tests {
                                     new_staking_time, 
                                     new_annualized_interest_rate_bp, 
                                     new_staking_quantity_range_min, 
-                                    new_staking_quantity_range_max
+                                    new_staking_quantity_range_max,
+                                    &clock
                                     );
             //Need to add check new staking rule
             let new_staking_rule = config::get_staking_rule(&staking_config, new_staking_time);
@@ -64,6 +67,7 @@ module e4c_staking::config_tests {
             
             ts::return_shared(staking_config);
             ts::return_to_sender(&scenario,cap);
+            clock::destroy_for_testing(clock);
         };
         ts::end(scenario);
 
@@ -80,12 +84,13 @@ module e4c_staking::config_tests {
         ts::next_tx(&mut scenario, @ambrus);      
         {   
             let mut staking_config: StakingConfig = ts::take_shared(&scenario);
+            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
             let cap: AdminCap = ts::take_from_sender(&scenario);
             let staking_time = 90;
             let removing_range_min_value = 1000;
             let removing_range_max_value = 18446744073709551615;
             let removing_annual_interest = 3000;
-            let removed = config::remove_staking_rule(&cap, &mut staking_config, staking_time);
+            let removed = config::remove_staking_rule(&cap, &mut staking_config, staking_time, &clock);
             
             let (removed_ranges_min, removed_range_max) = config::staking_quantity_range(&removed);
             let removed_annual_interest = config::annualized_interest_rate_bp(&removed);
@@ -94,6 +99,7 @@ module e4c_staking::config_tests {
             assert_eq(removed_annual_interest, removing_annual_interest);
             ts::return_shared(staking_config);
             ts::return_to_sender(&scenario,cap);
+            clock::destroy_for_testing(clock);
         };
         ts::end(scenario);
     }
@@ -110,13 +116,15 @@ module e4c_staking::config_tests {
         
         {   
             let mut staking_config: StakingConfig = ts::take_shared(&scenario);
+            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
             let cap: AdminCap = ts::take_from_sender(&scenario);
             let staking_time = 30;
             
-            config::remove_staking_rule(&cap, &mut staking_config, staking_time);
+            config::remove_staking_rule(&cap, &mut staking_config, staking_time, &clock);
             config::get_staking_rule(&staking_config, staking_time);
             ts::return_shared(staking_config);
             ts::return_to_sender(&scenario,cap);
+            clock::destroy_for_testing(clock);
         };
         ts::end(scenario);
     }

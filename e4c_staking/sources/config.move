@@ -1,6 +1,8 @@
 module e4c_staking::config {
+    use sui::clock::{Self, Clock};
     use sui::package;
     use sui::tx_context::{sender};
+    use sui::event;
     use sui::vec_map::{Self, VecMap};
 
     // === Errors ===
@@ -38,6 +40,22 @@ module e4c_staking::config {
         // decided the range of staking quantity
         staking_quantity_range_min: u64,
         staking_quantity_range_max: u64,
+    }
+
+    public struct AddedRule has copy, drop {
+        added_staking_period: u64,
+        added_time: u64,
+        added_interest_rate: u16,
+        added_quantity_range_min: u64,
+        added_quantity_range_max: u64,
+    }
+
+    public struct RemovedRule has copy, drop {
+        removed_staking_period: u64,
+        removed_time: u64,
+        removed_intrest_rate: u16,
+        removed_quantity_range_min: u64,
+        removed_quantity_range_max: u64,
     }
 
     fun init(otw: CONFIG, ctx: &mut TxContext) {
@@ -86,7 +104,8 @@ module e4c_staking::config {
         staking_time: u64,
         annualized_interest_rate_bp: u16,
         staking_quantity_range_min: u64,
-        staking_quantity_range_max: u64
+        staking_quantity_range_max: u64,
+        clock: &Clock
     ) {
         assert!(staking_time > 0, EStakingTimeMustBeGreaterThanZero);
         assert!(annualized_interest_rate_bp <= MAX_BPS, EIncorrectBasisPoints);
@@ -99,17 +118,33 @@ module e4c_staking::config {
             staking_quantity_range_min,
             staking_quantity_range_max,
         });
-        // TODO: add event
+        let current_time = clock::timestamp_ms(clock);
+         event::emit(AddedRule {
+            added_staking_period: staking_time,
+            added_time: current_time,
+            added_interest_rate: annualized_interest_rate_bp,
+            added_quantity_range_min: staking_quantity_range_min,
+            added_quantity_range_max: staking_quantity_range_max,
+        });
     }
 
     public fun remove_staking_rule(
         _: &AdminCap,
         config: &mut StakingConfig,
-        staking_time: u64
+        staking_time: u64,
+        clock: &Clock
     ): StakingRule {
         let (_, config) = vec_map::remove(&mut config.staking_rules, &staking_time);
+        
+        let current_time = clock::timestamp_ms(clock);
+        event::emit(RemovedRule {
+            removed_staking_period: staking_time,
+            removed_time: current_time,
+            removed_intrest_rate: config.annualized_interest_rate_bp,
+            removed_quantity_range_min: config.staking_quantity_range_min,
+            removed_quantity_range_max: config.staking_quantity_range_max,
+        });
         config
-        // TODO: add event
     }
 
     // === Public-View Functions ===
