@@ -11,7 +11,7 @@ module e4c_staking::config_tests {
     const NEW_STAKING_QUANTITY_RANGE_MIN: u64 = 3620;
     const NEW_STAKING_QUANTITY_RANGE_MAX: u64 = 36300;
     const STAKING_AMOUNT: u64 = 3620;
-    const PRE_CALCULATION_STAKING_REWARD: u64 = 10888;
+    const PRE_CALCULATION_STAKING_REWARD: u64 = 1088;
     
     const TARGETED_REMOVE_STAKING_TIME: u64 = 90;
     const REMOVING_STAKING_QUANTITY_RANGE_MIN: u64 = 1000;
@@ -34,7 +34,7 @@ module e4c_staking::config_tests {
             staking_quantity_range_min,
             staking_quantity_range_max,
             expected_reward
-        ) = (100, 30, 1000, 1, 100, 8);
+        ) = (100, 30, 1000, 1, 100, 0);
         let details = config::new_staking_rules(
             staking_time,
             annualized_interest_rate_bp,
@@ -62,7 +62,7 @@ module e4c_staking::config_tests {
             staking_quantity_range_min,
             staking_quantity_range_max,
             expected_reward
-        ) = (1000, 60, 2000, 100, 1000, 333);
+        ) = (1000, 60, 2000, 100, 1000, 33);
         let details = config::new_staking_rules(
             staking_time,
             annualized_interest_rate_bp,
@@ -90,7 +90,7 @@ module e4c_staking::config_tests {
             staking_quantity_range_min,
             staking_quantity_range_max,
             expected_reward
-        ) = (3000, 90, 3000, 3000, RANGE_MAX_U64, 2250);
+        ) = (3000, 90, 3000, 3000, RANGE_MAX_U64, 225);
         let details = config::new_staking_rules(
             staking_time,
             annualized_interest_rate_bp,
@@ -116,7 +116,7 @@ module e4c_staking::config_tests {
             staking_quantity_range_min,
             staking_quantity_range_max,
             expected_reward
-        ) = (RANGE_MAX_U64, 360, 1, 3000, RANGE_MAX_U64, 18446744073709551);
+        ) = (RANGE_MAX_U64, 360, 1, 3000, RANGE_MAX_U64, 1844674407370955);
         let details = config::new_staking_rules(
             staking_time,
             annualized_interest_rate_bp,
@@ -169,7 +169,7 @@ module e4c_staking::config_tests {
             staking_quantity_range_min,
             staking_quantity_range_max,
             expected_reward
-        ) = (1, RANGE_MAX_U64, 1, 1, 100, 51240955760304);
+        ) = (1, RANGE_MAX_U64, 1, 1, 100, 5124095576030);
         let details = config::new_staking_rules(
             staking_time,
             annualized_interest_rate_bp,
@@ -218,7 +218,7 @@ module e4c_staking::config_tests {
             staking_quantity_range_min,
             staking_quantity_range_max,
             expected_reward
-        ) = (1000, 360, RANGE_MAX_U16, 1, 1000, RANGE_MAX_U16 as u64);
+        ) = (10000, 360, RANGE_MAX_U16, 1, 10000, RANGE_MAX_U16 as u64);
         let details = config::new_staking_rules(
             staking_time,
             annualized_interest_rate_bp,

@@ -159,7 +159,7 @@ module e4c_staking::config {
         // Formula: reward = (N * T / 360 * amountE4C)
         // N = annualized interest rate in basis points
         // T = staking time in days
-        let reward = (((rule.annualized_interest_rate_bp as u64) * staking_time / 360) * staking_quantity) / 1000;
+        let reward = (((rule.annualized_interest_rate_bp as u64) * staking_time / 360) * staking_quantity) / 10_000;
         reward as u64
     }
 

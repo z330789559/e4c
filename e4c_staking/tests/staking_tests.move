@@ -23,7 +23,7 @@ module e4c_staking::staking_tests {
     const BOB_BALANCE: u64 = 300;
     const BOB_STAKED_AMOUNT : u64 = 100;
     const BOB_STAKING_PERIOD: u64 = 60;
-    const ESTIMATED_REWARD_TO_BOB : u64 = 33;
+    const ESTIMATED_REWARD_TO_BOB : u64 = 3;
     const ESTIMATED_INTEREST_RATE_ON_60_DAYS: u16 = 2000;
 
     const STRANGE_STAKING_PERIOD: u64 = 10_000;
