@@ -123,6 +123,8 @@ module e4c_staking::staking {
     //transfer::transfer(receipt_obj, BOB_ADDRESS);
    // Invalid private transfer. 
    // The function 'sui::transfer::transfer' is restricted to being called in the object's module, '(e4c_staking=0x0)::staking'
+   // This using this function will be determined based on the case of the Ambrus usage. 
+    #[test_only]
     public fun transfer_staking_receipt(
         receipt: StakingReceipt,
         staker_addres: address,
