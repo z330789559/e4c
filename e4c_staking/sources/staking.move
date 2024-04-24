@@ -24,7 +24,7 @@ module e4c_staking::staking {
     // [Owned Object]: StakingReceipt represents a receipt of staked tokens.
     // The receipt will have complete setup upon creation including rewards since it's fixed.
     // Once it's created, you can only unstake the tokens when the staking time is ended.
-    public struct StakingReceipt has key {
+    public struct StakingReceipt has key, store {
         id: UID,
         // Amount of tokens staked in the receipt
         amount_staked: Balance<E4C>,
@@ -118,17 +118,6 @@ module e4c_staking::staking {
             staking_end_at: calculate_locking_time(staked_at, staking_days),
             reward: coin::into_balance(e4c_tokens_request(liquidity_pool, reward, ctx))
         }
-    }
-    //transfer::transfer(receipt_obj, BOB_ADDRESS);
-   // Invalid private transfer. 
-   // The function 'sui::transfer::transfer' is restricted to being called in the object's module, '(e4c_staking=0x0)::staking'
-   // This using this function will be determined based on the case of the Ambrus usage. 
-    #[test_only]
-    public fun transfer_staking_receipt(
-        receipt: StakingReceipt,
-        staker_addres: address,
-    ) {
-       transfer::transfer(receipt, staker_addres);
     }
 
     // Unstake the tokens from the receipt.

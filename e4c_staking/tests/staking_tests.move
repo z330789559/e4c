@@ -52,7 +52,7 @@ module e4c_staking::staking_tests {
             let expected_stake_end_time = CLOCK_SET_TIMESTAMP + 7776000000;
             let stake_end_time = staking::staking_receipt_staking_end_at(&receipt_obj);
             assert_eq(stake_end_time, expected_stake_end_time);
-            staking::transfer_staking_receipt(receipt_obj, @alice);
+            transfer::public_transfer(receipt_obj, @alice);
             
         };
 
@@ -82,7 +82,7 @@ module e4c_staking::staking_tests {
                 &mut scenario
             );
             return_and_destory_test_objects(pool, config, clock);
-            staking::transfer_staking_receipt(receipt_obj, @alice);
+            transfer::public_transfer(receipt_obj, @alice);
             
         };
         ts::next_tx(&mut scenario, @alice);
@@ -125,7 +125,7 @@ module e4c_staking::staking_tests {
             let get_expected_reward = config::staking_reward(&config, ALICE_STAKING_PERIOD, ALICE_STAKED_AMOUNT);
             let requested_amount_from_pool = staking::staking_receipt_reward(&receipt_obj);
             assert_eq(get_expected_reward, requested_amount_from_pool);
-            staking::transfer_staking_receipt(receipt_obj, @alice);
+            transfer::public_transfer(receipt_obj, @alice);
             return_and_destory_test_objects(pool, config, clock);
         };
         ts::end(scenario);
@@ -185,7 +185,7 @@ module e4c_staking::staking_tests {
                 CLOCK_SET_TIMESTAMP,
                 &mut scenario
             );
-            staking::transfer_staking_receipt(receipt_obj, @chad);
+            transfer::public_transfer(receipt_obj, @chad);
             return_and_destory_test_objects(pool, config, clock);
         };
         ts::end(scenario);
@@ -212,7 +212,7 @@ module e4c_staking::staking_tests {
                 CLOCK_SET_TIMESTAMP,
                 &mut scenario
             );
-            staking::transfer_staking_receipt(receipt_obj, @bob);
+            transfer::public_transfer(receipt_obj, @bob);
             return_and_destory_test_objects(pool, config, clock);
         };
         ts::end(scenario);
@@ -254,7 +254,7 @@ module e4c_staking::staking_tests {
             assert_eq (staking_finish_time, CLOCK_SET_TIMESTAMP + 5184000000);
             assert_eq (reward_amount, 33);
 
-            staking::transfer_staking_receipt(receipt_obj, @bob);   
+            transfer::public_transfer(receipt_obj, @bob);   
         };
         // ===== Start unstaking BOB ADDRESS=====
         ts::next_tx(&mut scenario, @bob);
