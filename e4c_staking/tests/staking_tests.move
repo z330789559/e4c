@@ -35,7 +35,7 @@ module e4c_staking::staking_tests {
     const CHAD_STAKED_AMOUNT : u64 = 12_000;
 
     const MINTING_AMOUNT: u64 = 100_000_000;
-    const MINTING_SMALL : u64 = 100;
+    const MINTING_SMALL : u64 = 10;
 
     #[test]
     public fun test_calculation_locking_time() {
@@ -247,13 +247,13 @@ module e4c_staking::staking_tests {
                 &mut scenario
             );
             
-            let (stake_amount, 
-                stake_start_time, 
-                staking_period, 
-                interest_rate, 
-                staking_finish_time,
-                reward_amount
-                ) = staking::staking_receipt_data(&receipt_obj);
+            
+            let stake_amount = staking::staking_receipt_amount(&receipt_obj);
+            let stake_start_time = staking::staking_receipt_staked_at(&receipt_obj);
+            let staking_period = staking::staking_receipt_applied_staking_days(&receipt_obj);
+            let interest_rate = staking::staking_receipt_applied_interest_rate_bp(&receipt_obj);
+            let staking_finish_time = staking::staking_receipt_staking_end_at(&receipt_obj);
+            let reward_amount = staking::staking_receipt_reward(&receipt_obj);
             assert_eq (stake_amount, BOB_STAKED_AMOUNT);
             assert_eq (stake_start_time, CLOCK_SET_TIMESTAMP);
             assert_eq (staking_period, BOB_STAKING_PERIOD);

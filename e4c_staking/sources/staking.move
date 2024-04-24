@@ -202,17 +202,6 @@ module e4c_staking::staking {
         balance::value(&liquidity_pool.balance)
     }
 
-    public fun staking_receipt_data(receipt: &StakingReceipt): (u64, u64, u64, u16, u64, u64) {
-        (
-            balance::value(&receipt.amount_staked),
-            receipt.staked_at,
-            receipt.applied_staking_days,
-            receipt.applied_interest_rate_bp,
-            receipt.staking_end_at,
-            balance::value(&receipt.reward)
-        )
-    }
-
     public fun staking_receipt_amount(receipt: &StakingReceipt): u64 {
         balance::value(&receipt.amount_staked)
     }

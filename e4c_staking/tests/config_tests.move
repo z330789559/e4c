@@ -1,6 +1,5 @@
 #[test_only]
 module e4c_staking::config_tests {
-    use std::debug;
     use sui::clock::{Self};
     use sui::test_utils::{assert_eq, destroy};
     use sui::test_scenario as ts;
