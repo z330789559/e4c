@@ -147,6 +147,7 @@ module e4c_staking::staking_tests {
         ts::next_tx(&mut scenario, @treasury);
         {
             let mut testing_staking_config: StakingConfig = ts::take_shared(&scenario);
+            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
             let cap: AdminCap = ts::take_from_sender(&scenario);
             let strange_interest = 0;
             let strange_staking_quantity_min = 10_000;
@@ -156,10 +157,12 @@ module e4c_staking::staking_tests {
                                     STRANGE_STAKING_PERIOD, 
                                     strange_interest, 
                                     strange_staking_quantity_min, 
-                                    strange_staking_quantity_max
+                                    strange_staking_quantity_max,
+                                    &clock
                                     );
             ts::return_shared(testing_staking_config);
             ts::return_to_sender(&scenario,cap);
+            clock::destroy_for_testing(clock);
         };
         // check that strange staking rule is added
         ts::next_tx(&mut scenario, @treasury);
