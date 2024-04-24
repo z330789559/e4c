@@ -212,6 +212,44 @@ module e4c_staking::staking {
         )
     }
 
+    public fun staking_receipt_amount(receipt: &StakingReceipt): u64 {
+        balance::value(&receipt.amount_staked)
+    }
+
+    public fun staking_receipt_staked_at(receipt: &StakingReceipt): u64 {
+        receipt.staked_at
+    }
+
+    public fun staking_receipt_applied_staking_days(receipt: &StakingReceipt): u64 {
+        receipt.applied_staking_days
+    }
+
+    public fun staking_receipt_applied_interest_rate_bp(receipt: &StakingReceipt): u16 {
+        receipt.applied_interest_rate_bp
+    }
+
+    public fun staking_receipt_staking_end_at(receipt: &StakingReceipt): u64 {
+        receipt.staking_end_at
+    }
+
+    public fun staking_receipt_reward(receipt: &StakingReceipt): u64 {
+        balance::value(&receipt.reward)
+    }
+
+    public fun staking_receipt_total_reward_amount(receipt: &StakingReceipt): u64 {
+        balance::value(&receipt.amount_staked) + balance::value(&receipt.reward)
+    }
+
+    public fun staking_receipt_staking_remain_period(receipt: &StakingReceipt, clock: &Clock): u64 {
+        let current = clock::timestamp_ms(clock);
+        let staking_end_at = receipt.staking_end_at;
+        if (current < staking_end_at) {
+            staking_end_at - current
+        } else {
+            0
+        }   
+    }
+
     // === Testing Functions ===
 
     #[test_only] use e4c_staking::config::init_for_testing as config_init;
