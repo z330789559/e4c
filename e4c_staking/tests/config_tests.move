@@ -5,7 +5,17 @@ module e4c_staking::config_tests {
     use sui::test_scenario as ts;
 
     use e4c_staking::config::{AdminCap, StakingConfig, Self};
-
+    const NEW_STAKING_TIME: u64 = 300;
+    const NEW_ANNUALIZED_INTEREST_RATE_BP: u16 = 3610;
+    const NEW_STAKING_QUANTITY_RANGE_MIN: u64 = 3620;
+    const NEW_STAKING_QUANTITY_RANGE_MAX: u64 = 36300;
+    const STAKING_AMOUNT: u64 = 3620;
+    const PRE_CALCULATION_STAKING_REWARD: u64 = 10888;
+    
+    const TARGETED_REMOVE_STAKING_TIME: u64 = 90;
+    const REMOVING_STAKING_QUANTITY_RANGE_MIN: u64 = 1000;
+    const REMOVING_STAKING_QUANTITY_RANGE_MAX: u64 = 18446744073709551615;
+    const REMOVING_ANNUALIZED_INTEREST_RATE_BP: u16 = 3000;
     #[test]
     fun test_reward() {
         let mut ctx = tx_context::dummy();
@@ -41,29 +51,23 @@ module e4c_staking::config_tests {
             let mut staking_config: StakingConfig = ts::take_shared(&scenario);
             let clock = clock::create_for_testing(ts::ctx(&mut scenario));
             let cap: AdminCap = ts::take_from_sender(&scenario);
-            let new_staking_time = 300;
-            let new_annualized_interest_rate_bp = 3610;
-            let new_staking_quantity_range_min = 3620;
-            let new_staking_quantity_range_max = 36300;
-            let staking_amount = 3620;
-            let pre_calculation_staking_reward =10888;
             config::add_staking_rule(&cap, 
                                     &mut staking_config, 
-                                    new_staking_time, 
-                                    new_annualized_interest_rate_bp, 
-                                    new_staking_quantity_range_min, 
-                                    new_staking_quantity_range_max,
+                                    NEW_STAKING_TIME, 
+                                    NEW_ANNUALIZED_INTEREST_RATE_BP,
+                                    NEW_STAKING_QUANTITY_RANGE_MIN,
+                                    NEW_STAKING_QUANTITY_RANGE_MAX,
                                     &clock
                                     );
             //Need to add check new staking rule
-            let new_staking_rule = config::get_staking_rule(&staking_config, new_staking_time);
+            let new_staking_rule = config::get_staking_rule(&staking_config, NEW_STAKING_TIME);
             let (expected_range_min, expected_range_max) = config::staking_quantity_range(new_staking_rule);
             let expected_annual_interest = config::annualized_interest_rate_bp(new_staking_rule);
-            let expected_reward = config::staking_reward(&staking_config, new_staking_time, staking_amount);
-            assert_eq(expected_range_min, new_staking_quantity_range_min);
-            assert_eq(expected_range_max, new_staking_quantity_range_max);
-            assert_eq(expected_annual_interest, new_annualized_interest_rate_bp);
-            assert_eq(expected_reward, pre_calculation_staking_reward);
+            let expected_reward = config::staking_reward(&staking_config, NEW_STAKING_TIME, STAKING_AMOUNT);
+            assert_eq(expected_range_min, NEW_STAKING_QUANTITY_RANGE_MIN);
+            assert_eq(expected_range_max, NEW_STAKING_QUANTITY_RANGE_MAX);
+            assert_eq(expected_annual_interest, NEW_ANNUALIZED_INTEREST_RATE_BP);
+            assert_eq(expected_reward, PRE_CALCULATION_STAKING_REWARD);
             
             ts::return_shared(staking_config);
             ts::return_to_sender(&scenario,cap);
@@ -86,17 +90,15 @@ module e4c_staking::config_tests {
             let mut staking_config: StakingConfig = ts::take_shared(&scenario);
             let clock = clock::create_for_testing(ts::ctx(&mut scenario));
             let cap: AdminCap = ts::take_from_sender(&scenario);
-            let staking_time = 90;
-            let removing_range_min_value = 1000;
-            let removing_range_max_value = 18446744073709551615;
-            let removing_annual_interest = 3000;
-            let removed = config::remove_staking_rule(&cap, &mut staking_config, staking_time, &clock);
+            let removed = config::remove_staking_rule(&cap, &mut staking_config, TARGETED_REMOVE_STAKING_TIME, &clock);
             
             let (removed_ranges_min, removed_range_max) = config::staking_quantity_range(&removed);
             let removed_annual_interest = config::annualized_interest_rate_bp(&removed);
-            assert_eq(removed_ranges_min, removing_range_min_value);
-            assert_eq(removed_range_max, removing_range_max_value);
-            assert_eq(removed_annual_interest, removing_annual_interest);
+
+            assert_eq(removed_ranges_min, REMOVING_STAKING_QUANTITY_RANGE_MIN);
+            assert_eq(removed_range_max, REMOVING_STAKING_QUANTITY_RANGE_MAX);
+            assert_eq(removed_annual_interest, REMOVING_ANNUALIZED_INTEREST_RATE_BP);
+            
             ts::return_shared(staking_config);
             ts::return_to_sender(&scenario,cap);
             clock::destroy_for_testing(clock);
