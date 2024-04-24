@@ -121,11 +121,11 @@ module e4c_staking::config {
         staking_quantity: u64
     ): u64 {
         let rule = get_staking_rule(config, staking_time);
-        // Formula: reward = (N * T / 360 * amountE4C) + amountE4C
+        // Formula: reward = (N * T / 360 * amountE4C)
         // N = annualized interest rate in basis points
         // T = staking time in days
-        let reward = (((rule.annualized_interest_rate_bp as u64) * staking_time / 360) * staking_quantity + staking_quantity) / 1000;
-        reward
+        let reward = (((rule.annualized_interest_rate_bp as u64) * staking_time / 360) * staking_quantity) / 1000;
+        reward as u64
     }
 
     public fun staking_quantity_range(
