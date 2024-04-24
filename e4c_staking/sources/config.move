@@ -140,16 +140,6 @@ module e4c_staking::config {
         rule.annualized_interest_rate_bp
     }
 
-    // Calculate the locking time in milliseconds
-    //     base_timestamp: the base timestamp in milliseconds
-    //     locking_days: the number of days to lock
-    public fun calculate_locking_time(
-        base_timestamp: u64,
-        locking_days: u64
-    ): u64 {
-        base_timestamp + locking_days * 24 * 60 * 60 * 1000
-    }
-
     #[test_only]
     public fun new_staking_rules(
         staking_time: u64,

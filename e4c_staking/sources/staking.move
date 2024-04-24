@@ -9,7 +9,6 @@ module e4c_staking::staking {
     use e4c::e4c::E4C;
     use e4c_staking::config::{
         annualized_interest_rate_bp,
-        calculate_locking_time,
         get_staking_rule,
         staking_quantity_range,
         staking_reward,
@@ -198,6 +197,17 @@ module e4c_staking::staking {
         let coin = coin::take(&mut liquidity_pool.balance, amount, ctx);
         coin
     }
+
+    // Calculate the locking time in milliseconds
+    //     base_timestamp: the base timestamp in milliseconds
+    //     locking_days: the number of days to lock
+    fun calculate_locking_time(
+        base_timestamp: u64,
+        locking_days: u64
+    ): u64 {
+        base_timestamp + locking_days * 24 * 60 * 60 * 1000
+    }
+
     // === Public view Functions ===
     public fun game_liquidity_pool_balance(liquidity_pool: &GameLiquidityPool): u64 {
         balance::value(&liquidity_pool.balance)
