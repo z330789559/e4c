@@ -1,14 +1,14 @@
 #[test_only]
 module e4c_staking::staking_tests {
-    use sui::balance::{Self, Balance};
-    use std::debug;
+    use sui::balance::{Self};
     use sui::coin::{Self};
     use sui::clock::{Self, Clock};
     use sui::test_utils::{assert_eq};
     use sui::test_scenario as ts;
     use sui::test_scenario::{Scenario};
 
-    use e4c_staking::staking::{Self, GameLiquidityPool, StakingReceipt, EAmountMustBeGreaterThanZero, EAmountTooHigh};
+    use e4c_staking::staking::{Self, GameLiquidityPool, StakingReceipt, 
+                        EStakingTimeNotEnded, EAmountMustBeGreaterThanZero, EAmountTooHigh};
     use e4c_staking::config::{AdminCap, StakingConfig, Self};
     use e4c::e4c::E4C;
     
@@ -28,17 +28,77 @@ module e4c_staking::staking_tests {
 
     const MINTING_AMOUNT: u64 = 100_000_000;
 
-    const ECalculatedTimeWrong: u64 = 0;
-    const EPoolBalanceNotEnough: u64 = 1;
-    
     #[test]
     public fun test_calculation_locking_time() {
+        let mut scenario = scenario();
+        ts::next_tx(&mut scenario, @treasury);
+        {
+            set_up_initial_condition_for_testing(
+                &mut scenario,
+                @treasury,
+                MINTING_AMOUNT,
+            )
+        };
+        ts::next_tx(&mut scenario, @alice);
+        {
+            let (receipt_obj, pool, config, clock)  = generate_staking_receipt_and_objects(
+                ALICE_BALANCE,
+                ALICE_STAKED_AMOUNT,
+                ALICE_STAKING_PERIOD,
+                CLOCK_SET_TIMESTAMP,
+                &mut scenario
+            );
+            return_and_destory_test_objects(pool, config, clock);
+            let expected_stake_end_time = CLOCK_SET_TIMESTAMP + 7776000000;
+            let stake_end_time = staking::staking_receipt_staking_end_at(&receipt_obj);
+            assert_eq(stake_end_time, expected_stake_end_time);
+            staking::transfer_staking_receipt(receipt_obj, @alice);
+            
+        };
 
+        ts::end(scenario);
     }
 
     #[test]
+    #[expected_failure(abort_code = EStakingTimeNotEnded)]
     public fun test_error_calculation_locking_time() {
+        let mut scenario = scenario();
+        ts::next_tx(&mut scenario, @treasury);
+        {
+            set_up_initial_condition_for_testing(
+                &mut scenario,
+                @treasury,
+                MINTING_AMOUNT,
+            )
+        };
+        
+        ts::next_tx(&mut scenario, @alice);
+        {
+            let (receipt_obj, pool, config, clock)  = generate_staking_receipt_and_objects(
+                ALICE_BALANCE,
+                ALICE_STAKED_AMOUNT,
+                ALICE_STAKING_PERIOD,
+                CLOCK_SET_TIMESTAMP,
+                &mut scenario
+            );
+            return_and_destory_test_objects(pool, config, clock);
+            staking::transfer_staking_receipt(receipt_obj, @alice);
+            
+        };
+        ts::next_tx(&mut scenario, @alice);
+        {
+            let mut clock = clock::create_for_testing(ts::ctx(&mut scenario));
+            clock::set_for_testing(&mut clock, CLOCK_SET_TIMESTAMP);
+            let received_staking_receipt = ts::take_from_sender<StakingReceipt>(&scenario);
 
+            clock::increment_for_testing(&mut clock, 5184000000); // 5184000000 for 60 days 
+            let reward_coin = staking::unstake(received_staking_receipt, &clock, ts::ctx(&mut scenario));
+            transfer::public_transfer(reward_coin, @alice);
+            clock::destroy_for_testing(clock); 
+
+        };
+
+        ts::end(scenario);
     }
 
     #[test]
@@ -104,8 +164,8 @@ module e4c_staking::staking_tests {
         // check that strange staking rule is added
         ts::next_tx(&mut scenario, @treasury);
         {
-            let mut testing_config: StakingConfig = ts::take_shared(&scenario);
-            
+            let testing_config: StakingConfig = ts::take_shared(&scenario);
+
             let expected_strange_reward = config::staking_reward(&testing_config, 
                                                                 STRANGE_STAKING_PERIOD, 
                                                                 CHAD_STAKED_AMOUNT);
