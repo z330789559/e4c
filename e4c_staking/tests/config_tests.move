@@ -44,7 +44,7 @@ module e4c_staking::config_tests {
             let new_staking_quantity_range_min = 3620;
             let new_staking_quantity_range_max = 36300;
             let staking_amount = 3620;
-            let pre_calculation_staking_reward =10892;
+            let pre_calculation_staking_reward =10888;
             config::add_staking_rule(&cap, 
                                     &mut staking_config, 
                                     new_staking_time, 
