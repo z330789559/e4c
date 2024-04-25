@@ -47,6 +47,8 @@ module e4c::treasury {
 
     public fun burn<T>(treasury: &mut ControlledTreasury<T>, cap: &ControlledTreasuryCap, coin: Coin<T>) {
         assert!(treasury.key == object::id(cap), 0);
+
+        treasury.minted = treasury.minted - coin::value(&coin);
         coin::burn(treasury.treasury_cap_mut(), coin);
     }
 
