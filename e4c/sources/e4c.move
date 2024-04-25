@@ -29,12 +29,12 @@ module e4c::e4c {
         transfer::public_transfer(deny_cap, ctx.sender())
     }
 
-    public fun add_addr_from_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddy: address, ctx: &mut TxContext){
-        coin::deny_list_add(denylist, denycap, denyaddy, ctx );
+    public fun add_addr_to_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddr: address, ctx: &mut TxContext) {
+        coin::deny_list_add(denylist, denycap, denyaddr, ctx);
     }
 
-    public fun remove_addr_from_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddy: address, ctx: &mut TxContext){
-        coin::deny_list_remove(denylist, denycap, denyaddy, ctx );
+    public fun remove_addr_from_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddr: address, ctx: &mut TxContext) {
+        coin::deny_list_remove(denylist, denycap, denyaddr, ctx);
     }
 
     #[test_only]
