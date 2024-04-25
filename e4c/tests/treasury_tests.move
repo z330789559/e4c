@@ -82,9 +82,6 @@ module e4c::treasury_tests {
             let treasury_cap = scenario.take_from_sender<TreasuryCap<E4C>>();
             let controlled_treasury_cap = treasury::new(treasury_cap, E4C_MINTING_AMOUNT, ts::ctx(&mut scenario));
             transfer::public_transfer(controlled_treasury_cap, @ambrus);
-            
-            
-            
         };
         // Mint E4C
         ts::next_tx(&mut scenario, @ambrus);
