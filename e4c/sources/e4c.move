@@ -1,6 +1,6 @@
 module e4c::e4c {
-    use sui::coin::Self;
-    use sui::tx_context::{sender};
+    use sui::coin::{Self, DenyCap};
+    use sui::deny_list::{DenyList};
 
     // === Constants ===
     // TODO: update the token metadata according to the requirements.
@@ -15,7 +15,7 @@ module e4c::e4c {
     public struct E4C has drop {}
 
     fun init(otw: E4C, ctx: &mut TxContext) {
-        let (treasury, metadata) = coin::create_currency(
+        let (treasury, deny_cap, metadata) = coin::create_regulated_currency(
             otw,
             E4CTokenDecimals,
             E4CTokenSymbol,
@@ -25,7 +25,16 @@ module e4c::e4c {
             ctx
         );
         transfer::public_freeze_object(metadata);
-        transfer::public_transfer(treasury, sender(ctx));
+        transfer::public_transfer(treasury, ctx.sender());
+        transfer::public_transfer(deny_cap, ctx.sender())
+    }
+
+    public fun add_addr_from_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddy: address, ctx: &mut TxContext){
+        coin::deny_list_add(denylist, denycap, denyaddy, ctx );
+    }
+
+    public fun remove_addr_from_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddy: address, ctx: &mut TxContext){
+        coin::deny_list_remove(denylist, denycap, denyaddy, ctx );
     }
 
     #[test_only]
