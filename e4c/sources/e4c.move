@@ -26,7 +26,7 @@ module e4c::e4c {
         );
         transfer::public_freeze_object(metadata);
         transfer::public_transfer(treasury, ctx.sender());
-        transfer::public_transfer(deny_cap, ctx.sender())
+        transfer::public_transfer(deny_cap, ctx.sender());
     }
 
     public fun add_addr_to_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddr: address, ctx: &mut TxContext) {
