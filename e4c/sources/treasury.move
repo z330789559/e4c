@@ -76,4 +76,13 @@ module e4c::treasury {
     fun treasury_cap_mut<T>(treasury: &mut ControlledTreasury<T>): &mut TreasuryCap<T> {
         dof::borrow_mut(&mut treasury.id, TreasuryCapKey {})
     }
+
+    // ==== Public view function ====
+    public fun controlled_treasury_minted<T>(treasury: &ControlledTreasury<T>): u64 {
+        treasury.minted
+    }
+
+    public fun controlled_treasury_mint_limit<T>(treasury: &ControlledTreasury<T>): u64 {
+        treasury.mint_limit
+    }
 }
