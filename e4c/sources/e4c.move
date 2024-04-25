@@ -1,12 +1,7 @@
 module e4c::e4c {
-    use std::option;
-
-    use sui::balance::Supply;
+    use sui::balance::{Self};
     use sui::coin::Self;
-    use sui::object;
-    use sui::object::UID;
-    use sui::transfer;
-    use sui::tx_context::{sender, TxContext};
+    use sui::tx_context::{sender};
 
     // === Constants ===
     // TODO: update the token metadata according to the requirements.
@@ -19,16 +14,16 @@ module e4c::e4c {
     // === Structs ===
 
     // [One Time Witness] E4C is a one-time witness struct that is used to initialize the E4C token.
-    struct E4C has drop {}
+    public struct E4C has drop {}
 
     // [frozen Object] E4CFunded is a struct that holds the total supply of the E4C token.
-    struct E4CTotalSupply has key {
+    public struct E4CTotalSupply has key {
         id: UID,
-        total_supply: Supply<E4C>
+        total_supply: balance::Supply<E4C>
     }
 
     fun init(otw: E4C, ctx: &mut TxContext) {
-        let (treasury, metadata) = coin::create_currency(
+        let (mut treasury, metadata) = coin::create_currency(
             otw,
             E4CTokenDecimals,
             E4CTokenSymbol,
@@ -51,4 +46,9 @@ module e4c::e4c {
 
     #[test_only]
     public fun init_for_testing(ctx: &mut TxContext) { init(E4C {}, ctx); }
+
+    #[test_only]
+    public fun get_total_supply(meta: &E4CTotalSupply): u64 {
+        balance::supply_value(&meta.total_supply)
+    }
 }

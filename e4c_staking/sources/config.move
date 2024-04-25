@@ -1,8 +1,8 @@
 module e4c_staking::config {
-    use sui::object::{Self, UID};
+    use sui::clock::{Self, Clock};
     use sui::package;
-    use sui::transfer;
-    use sui::tx_context::{sender, TxContext};
+    use sui::tx_context::{sender};
+    use sui::event;
     use sui::vec_map::{Self, VecMap};
 
     // === Errors ===
@@ -20,19 +20,19 @@ module e4c_staking::config {
     // === Structs ===
 
     // [One Time Witness] CONFIG is a one-time witness that is used to initialize the e4c package
-    struct CONFIG has drop {}
+    public struct CONFIG has drop {}
 
     // [Owned Object]: AdminCap is a capability that allows a holder to access the entire $E4C token configuration
-    struct AdminCap has key, store { id: UID }
+    public struct AdminCap has key, store { id: UID }
 
     // [Shared Object]: StakingConfig is a configuration for staking
-    struct StakingConfig has key, store {
+    public struct StakingConfig has key, store {
         id: UID,
         // staking time in days -> staking rules
         staking_rules: VecMap<u64, StakingRule>,
     }
 
-    struct StakingRule has store, drop {
+    public struct StakingRule has store, drop {
         // staking time in days
         staking_time: u64,
         // annualized interest rate in basis points
@@ -42,9 +42,25 @@ module e4c_staking::config {
         staking_quantity_range_max: u64,
     }
 
+    public struct AddedRule has copy, drop {
+        added_staking_period: u64,
+        added_time: u64,
+        added_interest_rate: u16,
+        added_quantity_range_min: u64,
+        added_quantity_range_max: u64,
+    }
+
+    public struct RemovedRule has copy, drop {
+        removed_staking_period: u64,
+        removed_time: u64,
+        removed_intrest_rate: u16,
+        removed_quantity_range_min: u64,
+        removed_quantity_range_max: u64,
+    }
+
     fun init(otw: CONFIG, ctx: &mut TxContext) {
         // staking config initialization
-        let config = StakingConfig {
+        let mut config = StakingConfig {
             id: object::new(ctx),
             staking_rules: vec_map::empty<u64, StakingRule>(),
         };
@@ -82,13 +98,14 @@ module e4c_staking::config {
         rules
     }
 
-    public(friend) fun add_staking_rule(
+    public fun add_staking_rule(
         _: &AdminCap,
         config: &mut StakingConfig,
         staking_time: u64,
         annualized_interest_rate_bp: u16,
         staking_quantity_range_min: u64,
-        staking_quantity_range_max: u64
+        staking_quantity_range_max: u64,
+        clock: &Clock
     ) {
         assert!(staking_time > 0, EStakingTimeMustBeGreaterThanZero);
         assert!(annualized_interest_rate_bp <= MAX_BPS, EIncorrectBasisPoints);
@@ -101,17 +118,33 @@ module e4c_staking::config {
             staking_quantity_range_min,
             staking_quantity_range_max,
         });
-        // TODO: add event
+        let current_time = clock::timestamp_ms(clock);
+         event::emit(AddedRule {
+            added_staking_period: staking_time,
+            added_time: current_time,
+            added_interest_rate: annualized_interest_rate_bp,
+            added_quantity_range_min: staking_quantity_range_min,
+            added_quantity_range_max: staking_quantity_range_max,
+        });
     }
 
-    public(friend) fun remove_staking_rule(
+    public fun remove_staking_rule(
         _: &AdminCap,
         config: &mut StakingConfig,
-        staking_time: u64
+        staking_time: u64,
+        clock: &Clock
     ): StakingRule {
         let (_, config) = vec_map::remove(&mut config.staking_rules, &staking_time);
+        
+        let current_time = clock::timestamp_ms(clock);
+        event::emit(RemovedRule {
+            removed_staking_period: staking_time,
+            removed_time: current_time,
+            removed_intrest_rate: config.annualized_interest_rate_bp,
+            removed_quantity_range_min: config.staking_quantity_range_min,
+            removed_quantity_range_max: config.staking_quantity_range_max,
+        });
         config
-        // TODO: add event
     }
 
     // === Public-View Functions ===
@@ -123,11 +156,11 @@ module e4c_staking::config {
         staking_quantity: u64
     ): u64 {
         let rule = get_staking_rule(config, staking_time);
-        // Formula: reward = (N * T / 360 * amountE4C) + amountE4C
+        // Formula: reward = (N * T / 360 * amountE4C)
         // N = annualized interest rate in basis points
         // T = staking time in days
-        let reward = (((rule.annualized_interest_rate_bp as u64) * staking_time / 360) * staking_quantity + staking_quantity) / 1000;
-        reward
+        let reward = (((rule.annualized_interest_rate_bp as u64) * staking_time / 360) * staking_quantity) / 10_000;
+        reward as u64
     }
 
     public fun staking_quantity_range(
@@ -140,16 +173,6 @@ module e4c_staking::config {
         rule: &StakingRule,
     ): u16 {
         rule.annualized_interest_rate_bp
-    }
-
-    // Calculate the locking time in milliseconds
-    //     base_timestamp: the base timestamp in milliseconds
-    //     locking_days: the number of days to lock
-    public fun calculate_locking_time(
-        base_timestamp: u64,
-        locking_days: u64
-    ): u64 {
-        base_timestamp + locking_days * 24 * 60 * 60 * 1000
     }
 
     #[test_only]
@@ -171,11 +194,16 @@ module e4c_staking::config {
     public fun new_staking_config(
         rules: StakingRule, staking_time: u64, ctx: &mut TxContext
     ): StakingConfig {
-        let config = StakingConfig {
+        let mut config = StakingConfig {
             id: object::new(ctx),
             staking_rules: vec_map::empty(),
         };
         vec_map::insert(&mut config.staking_rules, staking_time, rules);
         config
+    }
+
+    #[test_only]
+    public fun init_for_testing(ctx: &mut TxContext) {
+        init(CONFIG{}, ctx)
     }
 }
