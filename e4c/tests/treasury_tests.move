@@ -2,10 +2,10 @@
 module e4c::treasury_tests {
     use e4c::e4c::{Self, E4C};
     use sui::coin::{Self, Coin, TreasuryCap, DenyCap};
-    use e4c::treasury::{Self, ControlledTreasuryCap, EExceedMintingLimit, EExceedMintedAmount};
+    use e4c::treasury::{Self, ControlledTreasuryCap, ControlledTreasury, EExceedMintingLimit, EExceedMintedAmount};
     use sui::test_utils::assert_eq;
     use sui::test_scenario as ts;
-    
+    use sui::test_scenario::{Scenario};
 
     const E4C_MINTING_AMOUNT: u64 = 10_000_000;
     const E4C_EXCEEDED_MINTING_AMOUNT: u64 = 1_000_000_000;
@@ -17,18 +17,12 @@ module e4c::treasury_tests {
     fun test_check_controlled_treasury_cap() {
         let mut scenario = ts::begin(@ambrus);
         let mut _expected_controlled_treasury_cap_id: vector<u8> = vector::empty();
-        
         {
             e4c::init_for_testing(scenario.ctx());
         };
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let treasury = scenario.take_from_sender<TreasuryCap<E4C>>();
-            let deny_cap = scenario.take_from_sender<DenyCap<E4C>>();
-            assert_eq(treasury.total_supply(), 0);
-
-            scenario.return_to_sender(treasury);
-            scenario.return_to_sender(deny_cap);
+            init_for_treasury_tests(&mut scenario);
         };
 
         // Start to mint controlled_treasury_cap
@@ -39,9 +33,7 @@ module e4c::treasury_tests {
             let treasury_cap = scenario.take_from_sender<TreasuryCap<E4C>>();
             let controlled_treasury_cap = treasury::new(treasury_cap, E4C_MINTING_AMOUNT_LIMIT, ts::ctx(&mut scenario));
             _expected_controlled_treasury_cap_id = object::id_bytes(&controlled_treasury_cap);
-            
             transfer::public_transfer(controlled_treasury_cap, @ambrus);
-            
         };
         
         //Check ambrus account has controlled_treasury_cap
@@ -60,18 +52,12 @@ module e4c::treasury_tests {
     #[test]
     fun test_mint_e4c_in_allowed_range () {
         let mut scenario = ts::begin(@ambrus);
-        
         {
             e4c::init_for_testing(scenario.ctx());
         };
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let treasury = scenario.take_from_sender<TreasuryCap<E4C>>();
-            let deny_cap = scenario.take_from_sender<DenyCap<E4C>>();
-            assert_eq(treasury.total_supply(), 0);
-
-            scenario.return_to_sender(treasury);
-            scenario.return_to_sender(deny_cap);
+            init_for_treasury_tests(&mut scenario);
         };
 
         // Start to mint controlled_treasury_cap
@@ -79,21 +65,13 @@ module e4c::treasury_tests {
         // Meant that ControlledTreasury mint limit is 100_000_000
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let treasury_cap = scenario.take_from_sender<TreasuryCap<E4C>>();
-            let controlled_treasury_cap = treasury::new(treasury_cap, E4C_MINTING_AMOUNT, ts::ctx(&mut scenario));
-            transfer::public_transfer(controlled_treasury_cap, @ambrus);
+            mint_cap(&mut scenario, E4C_MINTING_AMOUNT_LIMIT);
         };
         // Mint E4C
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let controlled_treasury_cap = scenario.take_from_sender<ControlledTreasuryCap>();
-            let mut controlled_tresury = ts::take_shared(&scenario);
-            let minted_e4c = treasury::mint<E4C>(&mut controlled_tresury, &controlled_treasury_cap, E4C_MINTING_AMOUNT, ts::ctx(&mut scenario));
-            let minted_e4c_balance_amount = coin::value(&minted_e4c);
+            let minted_e4c_balance_amount = mint_e4c(&mut scenario, E4C_MINTING_AMOUNT);
             assert_eq(minted_e4c_balance_amount, E4C_MINTING_AMOUNT);
-            transfer::public_transfer(minted_e4c, @ambrus);
-            scenario.return_to_sender(controlled_treasury_cap);
-            ts::return_shared(controlled_tresury);
         };
         ts::end(scenario);
     }
@@ -107,12 +85,7 @@ module e4c::treasury_tests {
         };
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let treasury = scenario.take_from_sender<TreasuryCap<E4C>>();
-            let deny_cap = scenario.take_from_sender<DenyCap<E4C>>();
-            assert_eq(treasury.total_supply(), 0);
-
-            scenario.return_to_sender(treasury);
-            scenario.return_to_sender(deny_cap);
+            init_for_treasury_tests(&mut scenario);
         };
 
         // Start to mint controlled_treasury_cap
@@ -120,21 +93,13 @@ module e4c::treasury_tests {
         // Meant that ControlledTreasury mint limit is 100_000_000
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let treasury_cap = scenario.take_from_sender<TreasuryCap<E4C>>();
-            let controlled_treasury_cap = treasury::new(treasury_cap, E4C_MINTING_AMOUNT, ts::ctx(&mut scenario));
-            transfer::public_transfer(controlled_treasury_cap, @ambrus);
+            mint_cap(&mut scenario, E4C_MINTING_AMOUNT_LIMIT);
         };
         // Mint E4C
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let controlled_treasury_cap = scenario.take_from_sender<ControlledTreasuryCap>();
-            let mut controlled_tresury = ts::take_shared(&scenario);
-            let minted_e4c = treasury::mint<E4C>(&mut controlled_tresury, &controlled_treasury_cap, E4C_EXCEEDED_MINTING_AMOUNT, ts::ctx(&mut scenario));
-            let minted_e4c_balance_amount = coin::value(&minted_e4c);
+            let minted_e4c_balance_amount = mint_e4c(&mut scenario, E4C_EXCEEDED_MINTING_AMOUNT);
             assert_eq(minted_e4c_balance_amount, E4C_EXCEEDED_MINTING_AMOUNT);
-            transfer::public_transfer(minted_e4c, @ambrus);
-            scenario.return_to_sender(controlled_treasury_cap);
-            ts::return_shared(controlled_tresury);
         };
         ts::end(scenario);
     }
@@ -147,12 +112,7 @@ module e4c::treasury_tests {
         };
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let treasury = scenario.take_from_sender<TreasuryCap<E4C>>();
-            let deny_cap = scenario.take_from_sender<DenyCap<E4C>>();
-            assert_eq(treasury.total_supply(), 0);
-
-            scenario.return_to_sender(treasury);
-            scenario.return_to_sender(deny_cap);
+            init_for_treasury_tests(&mut scenario);
         };
 
         // Start to mint controlled_treasury_cap
@@ -160,33 +120,22 @@ module e4c::treasury_tests {
         // Meant that ControlledTreasury mint limit is 100_000_000
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let treasury_cap = scenario.take_from_sender<TreasuryCap<E4C>>();
-            let controlled_treasury_cap = treasury::new(treasury_cap, E4C_MINTING_AMOUNT, ts::ctx(&mut scenario));
-            transfer::public_transfer(controlled_treasury_cap, @ambrus);
+            mint_cap(&mut scenario, E4C_MINTING_AMOUNT_LIMIT);
         };
         // Mint E4C
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let controlled_treasury_cap = scenario.take_from_sender<ControlledTreasuryCap>();
-            let mut controlled_tresury = ts::take_shared(&scenario);
-            let minted_e4c = treasury::mint<E4C>(&mut controlled_tresury, &controlled_treasury_cap, E4C_MINTING_AMOUNT, ts::ctx(&mut scenario));
-            let minted_e4c_balance_amount = coin::value(&minted_e4c);
-            assert_eq(minted_e4c_balance_amount, E4C_MINTING_AMOUNT);
-            transfer::public_transfer(minted_e4c, @ambrus);
-            scenario.return_to_sender(controlled_treasury_cap);
-            ts::return_shared(controlled_tresury);
+            let _ = mint_e4c(&mut scenario, E4C_MINTING_AMOUNT);
         };
 
         // Burn E4C
         ts::next_tx(&mut scenario, @ambrus);
         {
             let mut minted_e4c = scenario.take_from_sender<Coin<E4C>>();
-            let controlled_treasury_cap = scenario.take_from_sender<ControlledTreasuryCap>();
-            let mut controlled_tresury = ts::take_shared(&scenario);
+            let (controlled_treasury_cap , mut controlled_tresury) = get_cap_and_treasury(&scenario);
             let split_e4c = coin::split(&mut minted_e4c, E4C_BURNING_AMOUNT, ts::ctx(&mut scenario));
             treasury::burn(&mut controlled_tresury, &controlled_treasury_cap, split_e4c);
-            scenario.return_to_sender(minted_e4c);
-            scenario.return_to_sender(controlled_treasury_cap);
+            returns_to_sender(&scenario, minted_e4c, controlled_treasury_cap);
             ts::return_shared(controlled_tresury);
         };
         // check remaining balance
@@ -213,12 +162,7 @@ module e4c::treasury_tests {
         };
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let treasury = scenario.take_from_sender<TreasuryCap<E4C>>();
-            let deny_cap = scenario.take_from_sender<DenyCap<E4C>>();
-            assert_eq(treasury.total_supply(), 0);
-
-            scenario.return_to_sender(treasury);
-            scenario.return_to_sender(deny_cap);
+            init_for_treasury_tests(&mut scenario);
         };
 
         // Start to mint controlled_treasury_cap
@@ -226,37 +170,70 @@ module e4c::treasury_tests {
         // Meant that ControlledTreasury mint limit is 100_000_000
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let treasury_cap = scenario.take_from_sender<TreasuryCap<E4C>>();
-            let controlled_treasury_cap = treasury::new(treasury_cap, E4C_MINTING_AMOUNT, ts::ctx(&mut scenario));
-            transfer::public_transfer(controlled_treasury_cap, @ambrus);
+            mint_cap(&mut scenario, E4C_MINTING_AMOUNT_LIMIT);
         };
         // Mint E4C
         ts::next_tx(&mut scenario, @ambrus);
         {
-            let controlled_treasury_cap = scenario.take_from_sender<ControlledTreasuryCap>();
-            let mut controlled_tresury = ts::take_shared(&scenario);
-            let minted_e4c = treasury::mint<E4C>(&mut controlled_tresury, &controlled_treasury_cap, E4C_MINTING_AMOUNT, ts::ctx(&mut scenario));
-            let minted_e4c_balance_amount = coin::value(&minted_e4c);
-            assert_eq(minted_e4c_balance_amount, E4C_MINTING_AMOUNT);
-            transfer::public_transfer(minted_e4c, @ambrus);
-            scenario.return_to_sender(controlled_treasury_cap);
-            ts::return_shared(controlled_tresury);
+            let _ = mint_e4c(&mut scenario, E4C_MINTING_AMOUNT);
         };
 
         // Burn E4C
         ts::next_tx(&mut scenario, @ambrus);
         {
             let minted_e4c = scenario.take_from_sender<Coin<E4C>>();
-            let controlled_treasury_cap = scenario.take_from_sender<ControlledTreasuryCap>();
-            let mut controlled_tresury = ts::take_shared(&scenario);
+            let (controlled_treasury_cap , mut controlled_tresury) = get_cap_and_treasury(&scenario);
+            
             let burning_e4c = coin::mint_for_testing<E4C>(E4C_EXCEEDED_BURNING_AMOUNT, ts::ctx(&mut scenario));
             treasury::burn(&mut controlled_tresury, &controlled_treasury_cap, burning_e4c);
-            scenario.return_to_sender(minted_e4c);
-            scenario.return_to_sender(controlled_treasury_cap);
+            returns_to_sender(&scenario, minted_e4c, controlled_treasury_cap);
             ts::return_shared(controlled_tresury);
         };
         ts::end(scenario);
 
     }
 
+    fun init_for_treasury_tests(_scenario: &mut Scenario) {
+        let treasury = _scenario.take_from_sender<TreasuryCap<E4C>>();
+        let deny_cap = _scenario.take_from_sender<DenyCap<E4C>>();
+        _scenario.return_to_sender(treasury);
+        _scenario.return_to_sender(deny_cap);        
+    }
+
+
+    fun get_cap_and_treasury(scenario: &Scenario): (ControlledTreasuryCap, ControlledTreasury<E4C>){
+        let controlled_treasury_cap = scenario.take_from_sender<ControlledTreasuryCap>();
+        let controlled_tresury = ts::take_shared(scenario);
+        (controlled_treasury_cap, controlled_tresury)
+    }
+
+    fun returns_to_sender(
+        scenario: &Scenario,
+        coin: Coin<E4C>,
+        controlled_treasury_cap: ControlledTreasuryCap
+    ){
+        scenario.return_to_sender(coin);
+        scenario.return_to_sender(controlled_treasury_cap);
+    }
+
+    fun mint_cap(
+        scenario: &mut Scenario,
+        minting_limit: u64){
+        let treasury_cap = scenario.take_from_sender<TreasuryCap<E4C>>();
+        let controlled_treasury_cap = treasury::new(treasury_cap, minting_limit, ts::ctx(scenario));
+        transfer::public_transfer(controlled_treasury_cap, @ambrus);
+    }
+
+    fun mint_e4c(
+        scenario: &mut Scenario,
+        minting_amount : u64
+    ): u64{
+        let (controlled_treasury_cap , mut controlled_tresury) = get_cap_and_treasury(scenario);
+        let minted_e4c = treasury::mint<E4C>(&mut controlled_tresury, &controlled_treasury_cap, minting_amount, ts::ctx(scenario));
+        let minted_e4c_balance_amount = coin::value(&minted_e4c);
+        transfer::public_transfer(minted_e4c, @ambrus);
+        scenario.return_to_sender(controlled_treasury_cap);
+        ts::return_shared(controlled_tresury);
+        minted_e4c_balance_amount
+    }
 }
