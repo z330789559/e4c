@@ -1,9 +1,10 @@
 module e4c_staking::config {
-    use sui::clock::Clock;
-    use sui::package;
-    use sui::tx_context::{sender};
-    use sui::event;
-    use sui::vec_map::{Self, VecMap};
+    use sui::{
+        clock::Clock,
+        package,
+        event,
+        vec_map::{Self, VecMap}
+    };
 
     // === Errors ===
     const EIncorrectBasisPoints: u64 = 0;
