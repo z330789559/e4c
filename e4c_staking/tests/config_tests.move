@@ -236,14 +236,14 @@ module e4c_staking::config_tests {
     fun test_add_new_staking_rule() {
         let mut scenario = ts::begin(@ambrus);
         {
-            config::init_for_testing(ts::ctx(&mut scenario));
+            config::init_for_testing(scenario.ctx());
         };
 
         ts::next_tx(&mut scenario, @ambrus);
         {   
-            let mut staking_config: StakingConfig = ts::take_shared(&scenario);
-            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
-            let cap: AdminCap = ts::take_from_sender(&scenario);
+            let mut staking_config: StakingConfig = scenario.take_shared();
+            let clock = clock::create_for_testing(scenario.ctx());
+            let cap: AdminCap = scenario.take_from_sender();
             config::add_staking_rule(&cap, 
                                     &mut staking_config, 
                                     NEW_STAKING_TIME, 
@@ -253,20 +253,20 @@ module e4c_staking::config_tests {
                                     &clock
                                     );
             //Need to add check new staking rule
-            let new_staking_rule = config::get_staking_rule(&staking_config, NEW_STAKING_TIME);
-            let (expected_range_min, expected_range_max) = config::staking_quantity_range(new_staking_rule);
-            let expected_annual_interest = config::annualized_interest_rate_bp(new_staking_rule);
-            let expected_reward = config::staking_reward(&staking_config, NEW_STAKING_TIME, STAKING_AMOUNT);
+            let new_staking_rule = staking_config.get_staking_rule(NEW_STAKING_TIME);
+            let (expected_range_min, expected_range_max) = new_staking_rule.staking_quantity_range();
+            let expected_annual_interest = new_staking_rule.annualized_interest_rate_bp();
+            let expected_reward = staking_config.staking_reward(NEW_STAKING_TIME, STAKING_AMOUNT);
             assert_eq(expected_range_min, NEW_STAKING_QUANTITY_RANGE_MIN);
             assert_eq(expected_range_max, NEW_STAKING_QUANTITY_RANGE_MAX);
             assert_eq(expected_annual_interest, NEW_ANNUALIZED_INTEREST_RATE_BP);
             assert_eq(expected_reward, PRE_CALCULATION_STAKING_REWARD);
             
             ts::return_shared(staking_config);
-            ts::return_to_sender(&scenario,cap);
+            scenario.return_to_sender(cap);
             clock::destroy_for_testing(clock);
         };
-        ts::end(scenario);
+        scenario.end();
 
     }
 
@@ -275,14 +275,14 @@ module e4c_staking::config_tests {
         let mut scenario = ts::begin(@ambrus);
         ts::next_tx(&mut scenario, @ambrus);
         {
-            config::init_for_testing(ts::ctx(&mut scenario));
+            config::init_for_testing(scenario.ctx());
         };
 
         ts::next_tx(&mut scenario, @ambrus);      
         {   
-            let mut staking_config: StakingConfig = ts::take_shared(&scenario);
-            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
-            let cap: AdminCap = ts::take_from_sender(&scenario);
+            let mut staking_config: StakingConfig = scenario.take_shared();
+            let clock = clock::create_for_testing(scenario.ctx());
+            let cap: AdminCap = scenario.take_from_sender();
             let removed = config::remove_staking_rule(&cap, &mut staking_config, TARGETED_REMOVE_STAKING_TIME, &clock);
             
             let (removed_ranges_min, removed_range_max) = config::staking_quantity_range(&removed);
@@ -293,10 +293,10 @@ module e4c_staking::config_tests {
             assert_eq(removed_annual_interest, REMOVING_ANNUALIZED_INTEREST_RATE_BP);
             
             ts::return_shared(staking_config);
-            ts::return_to_sender(&scenario,cap);
+            scenario.return_to_sender(cap);
             clock::destroy_for_testing(clock);
         };
-        ts::end(scenario);
+        scenario.end();
     }
 
     #[test,expected_failure(abort_code = e4c_staking::config::EStakingTimeNotFound)]
@@ -304,24 +304,24 @@ module e4c_staking::config_tests {
         let mut scenario = ts::begin(@ambrus);
         ts::next_tx(&mut scenario, @ambrus);
         {
-            config::init_for_testing(ts::ctx(&mut scenario));
+            config::init_for_testing(scenario.ctx());
         };
 
         ts::next_tx(&mut scenario, @ambrus);
         
         {   
-            let mut staking_config: StakingConfig = ts::take_shared(&scenario);
-            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
-            let cap: AdminCap = ts::take_from_sender(&scenario);
+            let mut staking_config: StakingConfig = scenario.take_shared();
+            let clock = clock::create_for_testing(scenario.ctx());
+            let cap: AdminCap = scenario.take_from_sender();
             let staking_time = 30;
             
             config::remove_staking_rule(&cap, &mut staking_config, staking_time, &clock);
-            config::get_staking_rule(&staking_config, staking_time);
+            staking_config.get_staking_rule(staking_time);
             ts::return_shared(staking_config);
-            ts::return_to_sender(&scenario,cap);
+            scenario.return_to_sender(cap);
             clock::destroy_for_testing(clock);
         };
-        ts::end(scenario);
+        scenario.end();
     }
 
 }

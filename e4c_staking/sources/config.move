@@ -1,5 +1,5 @@
 module e4c_staking::config {
-    use sui::clock::{Self, Clock};
+    use sui::clock::Clock;
     use sui::package;
     use sui::tx_context::{sender};
     use sui::event;
@@ -64,27 +64,30 @@ module e4c_staking::config {
             id: object::new(ctx),
             staking_rules: vec_map::empty<u64, StakingRule>(),
         };
-        vec_map::insert(&mut config.staking_rules, 30, StakingRule {
+
+        config.staking_rules.insert(30, StakingRule {
             staking_time: 30, // 30 days
             annualized_interest_rate_bp: 1000, // 10%
             staking_quantity_range_min: 1,
             staking_quantity_range_max: 100,
         });
-        vec_map::insert(&mut config.staking_rules, 60, StakingRule {
+
+        config.staking_rules.insert(60, StakingRule {
             staking_time: 60, // 60 days
             annualized_interest_rate_bp: 2000, // 20%
             staking_quantity_range_min: 100,
             staking_quantity_range_max: 1000,
         });
-        vec_map::insert(&mut config.staking_rules, 90, StakingRule {
+
+        config.staking_rules.insert(90, StakingRule {
             staking_time: 90, // 90 days
             annualized_interest_rate_bp: 3000, // 30%
             staking_quantity_range_min: 1000,
             staking_quantity_range_max: MAX_U64,
         });
-
+        
         transfer::public_share_object(config);
-        transfer::public_transfer(AdminCap { id: object::new(ctx) }, sender(ctx));
+        transfer::public_transfer(AdminCap { id: object::new(ctx) }, ctx.sender());
         package::claim_and_keep(otw, ctx);
     }
 
@@ -92,9 +95,9 @@ module e4c_staking::config {
 
     // https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
     public fun get_staking_rule(config: &StakingConfig, staking_time: u64): &StakingRule {
-        assert!(vec_map::contains(&config.staking_rules, &staking_time), EStakingTimeNotFound);
-        let index = vec_map::get_idx(&config.staking_rules, &staking_time);
-        let (_, rules) = vec_map::get_entry_by_idx(&config.staking_rules, index);
+        assert!(config.staking_rules.contains(&staking_time), EStakingTimeNotFound);
+        let index = config.staking_rules.get_idx(&staking_time);
+        let (_, rules) = config.staking_rules.get_entry_by_idx(index);
         rules
     }
 
@@ -109,16 +112,16 @@ module e4c_staking::config {
     ) {
         assert!(staking_time > 0, EStakingTimeMustBeGreaterThanZero);
         assert!(annualized_interest_rate_bp <= MAX_BPS, EIncorrectBasisPoints);
-        assert!(vec_map::contains(&config.staking_rules, &staking_time) == false, EStakingTimeConflict);
+        assert!(!config.staking_rules.contains(&staking_time), EStakingTimeConflict);
         assert!(staking_quantity_range_min < staking_quantity_range_max, EStakingQuantityRangeUnmatch);
 
-        vec_map::insert(&mut config.staking_rules, staking_time, StakingRule {
+        config.staking_rules.insert(staking_time, StakingRule {
             staking_time,
             annualized_interest_rate_bp,
             staking_quantity_range_min,
             staking_quantity_range_max,
         });
-        let current_time = clock::timestamp_ms(clock);
+        let current_time = clock.timestamp_ms();
          event::emit(AddedRule {
             added_staking_period: staking_time,
             added_time: current_time,
@@ -134,9 +137,9 @@ module e4c_staking::config {
         staking_time: u64,
         clock: &Clock
     ): StakingRule {
-        let (_, config) = vec_map::remove(&mut config.staking_rules, &staking_time);
+        let (_, config) = config.staking_rules.remove(&staking_time);
         
-        let current_time = clock::timestamp_ms(clock);
+        let current_time = clock.timestamp_ms();
         event::emit(RemovedRule {
             removed_staking_period: staking_time,
             removed_time: current_time,
@@ -155,7 +158,7 @@ module e4c_staking::config {
         staking_time: u64,
         staking_quantity: u64
     ): u64 {
-        let rule = get_staking_rule(config, staking_time);
+        let rule = config.get_staking_rule(staking_time);
         // Formula: reward = (N * T / 360 * amountE4C)
         // N = annualized interest rate in basis points
         // T = staking time in days
@@ -198,7 +201,7 @@ module e4c_staking::config {
             id: object::new(ctx),
             staking_rules: vec_map::empty(),
         };
-        vec_map::insert(&mut config.staking_rules, staking_time, rules);
+        config.staking_rules.insert(staking_time, rules);
         config
     }
 

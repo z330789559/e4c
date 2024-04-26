@@ -1,6 +1,5 @@
 module e4c::e4c {
-    use sui::coin::{Self, DenyCap};
-    use sui::deny_list::{DenyList};
+    use sui::coin;
 
     // === Constants ===
     // TODO: update the token metadata according to the requirements.
@@ -24,18 +23,21 @@ module e4c::e4c {
             option::none(),
             ctx
         );
+        // TODO: Are we sure about freezing? What about sharing instead?
         transfer::public_freeze_object(metadata);
         transfer::public_transfer(treasury, ctx.sender());
         transfer::public_transfer(deny_cap, ctx.sender());
     }
 
-    public fun add_addr_to_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddr: address, ctx: &mut TxContext) {
-        coin::deny_list_add(denylist, denycap, denyaddr, ctx);
-    }
+    // CHANGED: Why not just call `0x2::coin::deny_list_add` or `0x2::coin::deny_list_remove` directly?
 
-    public fun remove_addr_from_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddr: address, ctx: &mut TxContext) {
-        coin::deny_list_remove(denylist, denycap, denyaddr, ctx);
-    }
+    // public fun add_addr_to_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddr: address, ctx: &mut TxContext) {
+    //     coin::deny_list_add(denylist, denycap, denyaddr, ctx);
+    // }
+
+    // public fun remove_addr_from_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddr: address, ctx: &mut TxContext) {
+    //     coin::deny_list_remove(denylist, denycap, denyaddr, ctx);
+    // }
 
     #[test_only]
     public fun init_for_testing(ctx: &mut TxContext) { init(E4C {}, ctx); }
