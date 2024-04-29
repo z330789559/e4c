@@ -33,3 +33,7 @@ Temporary Items
 build
 e4c/Move.lock
 e4c_staking/Move.lock
+
+*.trace
+*.log
+*.mvcov
