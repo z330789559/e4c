@@ -1,11 +1,13 @@
 #[test_only]
 module e4c_staking::staking_tests {
-    use sui::balance::{Self};
-    use sui::coin::{Self};
-    use sui::clock::{Self, Clock};
-    use sui::test_utils::{assert_eq};
-    use sui::test_scenario as ts;
-    use sui::test_scenario::{Scenario};
+    use sui::{
+        balance,
+        coin,
+        clock::{Self, Clock},
+        test_utils::{assert_eq},
+        test_scenario as ts,
+        test_scenario::{Scenario},
+    };
 
     use e4c_staking::staking::{Self, GameLiquidityPool, StakingReceipt, 
                         EStakingTimeNotEnded, EAmountMustBeGreaterThanZero, 

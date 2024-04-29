@@ -1,9 +1,10 @@
 #[test_only]
 module e4c_staking::config_tests {
-    use sui::clock::{Self};
-    use sui::test_utils::{assert_eq, destroy};
-    use sui::test_scenario as ts;
-
+    use sui::{
+        clock,
+        test_utils::{assert_eq, destroy},
+        test_scenario as ts
+    };
     use e4c_staking::config::{AdminCap, StakingConfig, Self,
                 EStakingTimeNotFound , EStakingTimeMustBeGreaterThanZero, EIncorrectBasisPoints,
                 EStakingTimeConflict, EStakingQuantityRangeUnmatch };
