@@ -62,7 +62,7 @@ module e4c_staking::staking_tests {
     fun generate_staking_receipt_and_objects(
         current_balance: u64,
         staking_amount: u64,
-        staking_period: u64,
+        staking_in_days: u64,
         time_setting: u64,
         scenario: &mut Scenario,
     ): (StakingReceipt, GameLiquidityPool, StakingConfig, Clock) {
@@ -75,10 +75,10 @@ module e4c_staking::staking_tests {
         
         let receipt_obj = staking::new_staking_receipt(
             stake, 
-            staking_period,
+            &mut pool, 
             &clock,
             &config,
-            &mut pool, 
+            staking_in_days,
             scenario.ctx()
         );
         balance.destroy_for_testing();

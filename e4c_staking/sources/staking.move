@@ -87,20 +87,20 @@ module e4c_staking::staking {
     // Create a new staking receipt with the given stake and staking days.
     public fun new_staking_receipt(
         stake: Coin<E4C>,
-        staking_days: u64,
+        liquidity_pool: &mut GameLiquidityPool,
         clock: &Clock,
         config: &StakingConfig,
-        liquidity_pool: &mut GameLiquidityPool,
+        staking_in_days: u64,
         ctx: &mut TxContext
     ): StakingReceipt {
-        let detail = config.get_staking_rule(staking_days);
+        let detail = config.get_staking_rule(staking_in_days);
         let (min, max) = detail.staking_quantity_range();
         let amount = stake.value();
         assert!(amount >= min, EStakingQuantityTooLow);
         assert!(amount <= max, EStakingQuantityTooHigh);
 
         let staked_at = clock.timestamp_ms();
-        let reward = config.staking_reward(staking_days, amount);
+        let reward = config.staking_reward(staking_in_days, amount);
         let id = object::new(ctx);
 
         event::emit(Staked {
@@ -113,9 +113,9 @@ module e4c_staking::staking {
             id,
             amount_staked: stake.into_balance(),
             staked_at,
-            applied_staking_days: staking_days,
+            applied_staking_days: staking_in_days,
             applied_interest_rate_bp: detail.annualized_interest_rate_bp(),
-            staking_end_at: calculate_locking_time(staked_at, staking_days),
+            staking_end_at: calculate_locking_time(staked_at, staking_in_days),
             reward: e4c_tokens_request(liquidity_pool, reward, ctx).into_balance()
         }
     }
@@ -193,9 +193,9 @@ module e4c_staking::staking {
     //     locking_days: the number of days to lock
     fun calculate_locking_time(
         base_timestamp: u64,
-        locking_days: u64
+        locking_period_in_days: u64
     ): u64 {
-        base_timestamp + locking_days * 24 * 60 * 60 * 1000
+        base_timestamp + locking_period_in_days * 24 * 60 * 60 * 1000
     }
 
     // === Public view Functions ===
