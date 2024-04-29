@@ -31,8 +31,8 @@ module e4c_staking::staking_tests {
     const BOB_BALANCE_FOR_ERROR_TESTING: u64 = 5_000;
     const BOB_STAKED_AMOUNT : u64 = 100;
     const BOB_STAKING_PERIOD: u64 = 60;
-    const ESTIMATED_REWARD_TO_BOB : u64 = 3;
-    const ESTIMATED_INTEREST_RATE_ON_60_DAYS: u16 = 2000;
+    const ESTIMATED_REWARD_TO_BOB : u64 = 1;
+    const ESTIMATED_INTEREST_RATE_ON_60_DAYS: u16 = 1000;
 
     const STRANGE_STAKING_PERIOD: u64 = 10_000;
     const STRANGE_INTEREST: u16 = 0;
@@ -254,11 +254,11 @@ module e4c_staking::staking_tests {
     fun test_error_amount_toohigh_e4c_token_request() {
         let mut scenario = scenario();
         init_and_gen_staking_receipt(
-            @bob,
+            @alice,
             MINTING_SMALL,
-            BOB_BALANCE,
-            BOB_STAKED_AMOUNT,
-            BOB_STAKING_PERIOD,
+            ALICE_BALANCE,
+            ALICE_STAKED_AMOUNT,
+            ALICE_STAKING_PERIOD,
             CLOCK_SET_TIMESTAMP,
             &mut scenario
         );

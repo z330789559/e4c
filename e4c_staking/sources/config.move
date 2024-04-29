@@ -68,21 +68,21 @@ module e4c_staking::config {
 
         config.staking_rules.insert(30, StakingRule {
             staking_days: 30, // 30 days
-            annualized_interest_rate_bp: 1000, // 10%
+            annualized_interest_rate_bp: 800, // 8%
             staking_quantity_range_min: 1,
             staking_quantity_range_max: 100,
         });
 
         config.staking_rules.insert(60, StakingRule {
             staking_days: 60, // 60 days
-            annualized_interest_rate_bp: 2000, // 20%
+            annualized_interest_rate_bp: 1000, // 10%
             staking_quantity_range_min: 100,
             staking_quantity_range_max: 1000,
         });
 
         config.staking_rules.insert(90, StakingRule {
             staking_days: 90, // 90 days
-            annualized_interest_rate_bp: 3000, // 30%
+            annualized_interest_rate_bp: 1500, // 15%
             staking_quantity_range_min: 1000,
             staking_quantity_range_max: MAX_U64,
         });
