@@ -29,6 +29,7 @@ module e4c::e4c {
         transfer::public_transfer(deny_cap, ctx.sender());
     }
 
+<<<<<<< HEAD
     // CHANGED: Why not just call `0x2::coin::deny_list_add` or `0x2::coin::deny_list_remove` directly?
 
     // public fun add_addr_to_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddr: address, ctx: &mut TxContext) {
@@ -38,6 +39,8 @@ module e4c::e4c {
     // public fun remove_addr_from_deny_list(denylist: &mut DenyList, denycap: &mut DenyCap<E4C>, denyaddr: address, ctx: &mut TxContext) {
     //     coin::deny_list_remove(denylist, denycap, denyaddr, ctx);
     // }
+=======
+>>>>>>> babca6b (Direct call deny_list)
 
     #[test_only]
     public fun init_for_testing(ctx: &mut TxContext) { init(E4C {}, ctx); }
