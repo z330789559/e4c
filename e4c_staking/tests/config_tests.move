@@ -281,8 +281,8 @@ module e4c_staking::config_tests {
             let cap: AdminCap = scenario.take_from_sender();
             let removed = config::remove_staking_rule(&cap, &mut staking_config, TARGETED_REMOVE_STAKING_TIME, &clock);
             
-            let (removed_ranges_min, removed_range_max) = config::staking_quantity_range(&removed);
-            let removed_annual_interest = config::annualized_interest_rate_bp(&removed);
+            let (removed_ranges_min, removed_range_max) = removed.staking_quantity_range();
+            let removed_annual_interest = removed.annualized_interest_rate_bp();
 
             assert_eq(removed_ranges_min, REMOVING_STAKING_QUANTITY_RANGE_MIN);
             assert_eq(removed_range_max, RANGE_MAX_U64);
