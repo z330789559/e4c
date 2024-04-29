@@ -1,3 +1,6 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 module e4c_staking::config {
     use sui::{
         clock::Clock,
@@ -20,13 +23,13 @@ module e4c_staking::config {
 
     // === Structs ===
 
-    // [One Time Witness] CONFIG is a one-time witness that is used to initialize the e4c package
+    /// [One Time Witness] CONFIG is a one-time witness that is used to initialize the e4c package
     public struct CONFIG has drop {}
 
-    // [Owned Object]: AdminCap is a capability that allows a holder to access the entire $E4C token configuration
+    /// [Owned Object]: AdminCap is a capability that allows a holder to access the entire $E4C token configuration
     public struct AdminCap has key, store { id: UID }
 
-    // [Shared Object]: StakingConfig is a configuration for staking
+    /// [Shared Object]: StakingConfig is a configuration for staking
     public struct StakingConfig has key, store {
         id: UID,
         // staking time in days -> staking rules
@@ -94,14 +97,13 @@ module e4c_staking::config {
 
     // === Staking Config Functions ===
 
-    // https://mysten-labs.slack.com/archives/C04J99F4B2L/p1701194354270349?thread_ts=1701171910.032099&cid=C04J99F4B2L
     public fun get_staking_rule(config: &StakingConfig, staking_days: u64): &StakingRule {
         assert!(config.staking_rules.contains(&staking_days), EStakingTimeNotFound);
         let index = config.staking_rules.get_idx(&staking_days);
         let (_, rules) = config.staking_rules.get_entry_by_idx(index);
         rules
     }
-
+    /// Add a new staking rule to the staking configuration
     public fun add_staking_rule(
         _: &AdminCap,
         config: &mut StakingConfig,
@@ -131,7 +133,8 @@ module e4c_staking::config {
             added_quantity_range_max: staking_quantity_range_max,
         });
     }
-
+    
+    /// Remove a staking rule from the staking configuration
     public fun remove_staking_rule(
         _: &AdminCap,
         config: &mut StakingConfig,
@@ -152,7 +155,6 @@ module e4c_staking::config {
 
     // === Public-View Functions ===
 
-    // TODO: Consider moving to "staking" module
     public fun staking_reward(
         config: &StakingConfig,
         staking_days: u64,

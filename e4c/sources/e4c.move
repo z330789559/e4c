@@ -8,7 +8,7 @@ module e4c::e4c {
     };
 
     // === Constants ===
-    // The maximum supply of the E4C token. 1 Billion E4C tokens including two decimals.
+    /// The maximum supply of the E4C token. 1 Billion E4C tokens including two decimals.
     const E4CTokenMaxSupply: u64 = 1_000_000_000_00;
 
     // TODO: update the token metadata according to the requirements.
@@ -17,13 +17,13 @@ module e4c::e4c {
     const E4CTokenName: vector<u8> = b"$E4C";
     const E4CTokenDescription: vector<u8> = b"$E4C is ...";
 
-     // [frozen Object] E4CFunded is a struct that holds the total supply of the E4C token.
+    /// [frozen Object] E4CFunded is a struct that holds the total supply of the E4C token.
     public struct E4CTotalSupply has key {
         id: UID,
         total_supply: balance::Supply<E4C>
     }
 
-    // [One Time Witness] E4C is a one-time witness struct that is used to initialize the E4C token.
+    /// [One Time Witness] E4C is a one-time witness struct that is used to initialize the E4C token.
     public struct E4C has drop {}
 
     fun init(otw: E4C, ctx: &mut TxContext) {

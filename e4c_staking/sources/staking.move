@@ -1,3 +1,6 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 module e4c_staking::staking {
 
     use sui::{
@@ -22,9 +25,9 @@ module e4c_staking::staking {
     const EAmountMustBeGreaterThanZero: u64 = 3;
     const EAmountTooHigh: u64 = 4;
 
-    // [Owned Object]: StakingReceipt represents a receipt of staked tokens.
-    // The receipt will have complete setup upon creation including rewards since it's fixed.
-    // Once it's created, you can only unstake the tokens when the staking time is ended.
+    /// [Owned Object]: StakingReceipt represents a receipt of staked tokens.
+    /// The receipt will have complete setup upon creation including rewards since it's fixed.
+    /// Once it's created, you can only unstake the tokens when the staking time is ended.
     public struct StakingReceipt has key, store {
         id: UID,
         // Amount of tokens staked in the receipt
@@ -44,33 +47,33 @@ module e4c_staking::staking {
         reward: Balance<E4C>,
     }
 
-    // [Shared Object]: GameLiquidityPool is a store of minted E4C tokens.
+    /// [Shared Object]: GameLiquidityPool is a store of minted E4C tokens.
     public struct GameLiquidityPool has key, store {
         id: UID,
         balance: Balance<E4C>,
     }
 
-    // Event emitted when a new staking receipt is created
+    /// Event emitted when a new staking receipt is created
     public struct Staked has copy, drop {
         receipt_id: ID,
         owner: address,
         amount: u64,
     }
 
-    // Event emitted when unstaking tokens from a receipt
+    /// Event emitted when unstaking tokens from a receipt
     public struct Unstaked has copy, drop {
         receipt_id: ID,
         owner: address,
         amount: u64,
     }
 
-    // Event emitted when E4C tokens are placed in the GameLiquidityPool
+    /// Event emitted when E4C tokens are placed in the GameLiquidityPool
     public struct PoolPlaced has copy, drop {
         sender: address,
         amount: u64,
     }
 
-    // Event emitted when E4C tokens are taken from the GameLiquidityPool
+    /// Event emitted when E4C tokens are taken from the GameLiquidityPool
     public struct PoolWithdrawn has copy, drop {
         sender: address,
         amount: u64,
@@ -84,7 +87,7 @@ module e4c_staking::staking {
 
     // == Public Functions ==
 
-    // Create a new staking receipt with the given stake and staking days.
+    /// Create a new staking receipt with the given stake and staking days.
     public fun new_staking_receipt(
         stake: Coin<E4C>,
         liquidity_pool: &mut GameLiquidityPool,
@@ -120,8 +123,8 @@ module e4c_staking::staking {
         }
     }
 
-    // Unstake the tokens from the receipt.
-    // This function can be called only when the staking time is ended
+    /// Unstake the tokens from the receipt.
+    /// This function can be called only when the staking time is ended
     public fun unstake(
         receipt: StakingReceipt,
         clock: &Clock,
@@ -155,8 +158,8 @@ module e4c_staking::staking {
         total_reward_coin
     }
 
-    // Put back E4C tokens to the GameLiquidityPool without capability check.
-    // This function can be called by anyone.
+    /// Put back E4C tokens to the GameLiquidityPool without capability check.
+    /// This function can be called by anyone.
     public fun place_in_pool(liquidity_pool: &mut GameLiquidityPool, coin: Coin<E4C>, ctx: &mut TxContext) {
         assert!(coin.value() > 0, EAmountMustBeGreaterThanZero);
 
@@ -170,8 +173,8 @@ module e4c_staking::staking {
 
     // === Private Functions ===
 
-    // Take E4C tokens from the GameLiquidityPool without capability check.
-    // This function is only accessible to the friend module.
+    /// Take E4C tokens from the GameLiquidityPool without capability check.
+    /// This function is only accessible to the friend module.
     fun e4c_tokens_request(
         liquidity_pool: &mut GameLiquidityPool,
         amount: u64,
@@ -188,9 +191,9 @@ module e4c_staking::staking {
         coin::take(&mut liquidity_pool.balance, amount, ctx)
     }
 
-    // Calculate the locking time in milliseconds
-    //     base_timestamp: the base timestamp in milliseconds
-    //     locking_days: the number of days to lock
+    /// Calculate the locking time in milliseconds
+    ///     base_timestamp: the base timestamp in milliseconds
+    ///     locking_days: the number of days to lock
     fun calculate_locking_time(
         base_timestamp: u64,
         locking_period_in_days: u64
