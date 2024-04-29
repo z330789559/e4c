@@ -1,10 +1,13 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 module e4c::e4c {
     use sui::{
         coin::{Self},
         balance
     };
-    // === Constants ===
 
+    // === Constants ===
     const E4CTokenMaxSupply: u64 = 1_000_000_000;
     // TODO: update the token metadata according to the requirements.
     const E4CTokenDecimals: u8 = 6;
@@ -22,6 +25,7 @@ module e4c::e4c {
     public struct E4C has drop {}
 
     fun init(otw: E4C, ctx: &mut TxContext) {
+        // Create a regulated currency with the given metadata.
         let (mut treasuryCap, deny_cap, metadata) = coin::create_regulated_currency(
             otw,
             E4CTokenDecimals,
@@ -31,16 +35,18 @@ module e4c::e4c {
             option::none(),
             ctx
         );
-        
+        // Mint the coin and get the coin object.
         let coin = coin::mint(&mut treasuryCap, E4CTokenMaxSupply, ctx);
+        // Unwrap and burn the treasury cap and get the total supply.
         let total_supply = treasuryCap.treasury_into_supply();
 
-        // TODO: Are we sure about freezing? What about sharing instead?
+        // Freeze the metadata and total supply object.
         transfer::public_freeze_object(metadata);
-
         transfer::freeze_object(E4CTotalSupply { id: object::new(ctx), total_supply });
         
+        // Send the deny cap to the sender.
         transfer::public_transfer(deny_cap, ctx.sender());
+        // Send the total supply; 1B to the sender.
         transfer::public_transfer(coin, ctx.sender());
 
     }
