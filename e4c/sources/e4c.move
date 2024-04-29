@@ -8,9 +8,11 @@ module e4c::e4c {
     };
 
     // === Constants ===
-    const E4CTokenMaxSupply: u64 = 1_000_000_000;
+    // The maximum supply of the E4C token. 1 Billion E4C tokens including two decimals.
+    const E4CTokenMaxSupply: u64 = 1_000_000_000_00;
+
     // TODO: update the token metadata according to the requirements.
-    const E4CTokenDecimals: u8 = 6;
+    const E4CTokenDecimals: u8 = 2;
     const E4CTokenSymbol: vector<u8> = b"E4C";
     const E4CTokenName: vector<u8> = b"$E4C";
     const E4CTokenDescription: vector<u8> = b"$E4C is ...";
@@ -26,7 +28,7 @@ module e4c::e4c {
 
     fun init(otw: E4C, ctx: &mut TxContext) {
         // Create a regulated currency with the given metadata.
-        let (mut treasuryCap, deny_cap, metadata) = coin::create_regulated_currency(
+        let (mut treasury_cap, deny_cap, metadata) = coin::create_regulated_currency(
             otw,
             E4CTokenDecimals,
             E4CTokenSymbol,
@@ -36,9 +38,9 @@ module e4c::e4c {
             ctx
         );
         // Mint the coin and get the coin object.
-        let coin = coin::mint(&mut treasuryCap, E4CTokenMaxSupply, ctx);
+        let coin = coin::mint(&mut treasury_cap, E4CTokenMaxSupply, ctx);
         // Unwrap and burn the treasury cap and get the total supply.
-        let total_supply = treasuryCap.treasury_into_supply();
+        let total_supply = treasury_cap.treasury_into_supply();
 
         // Freeze the metadata and total supply object.
         transfer::public_freeze_object(metadata);
