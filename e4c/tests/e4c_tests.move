@@ -7,7 +7,7 @@ module e4c::e4c_tests {
         coin::{TreasuryCap, DenyCap}
     };
 
-    const EXPECTED_TOTAL_SUPPLY: u64 = 1_000_000_000;
+    const EXPECTED_TOTAL_SUPPLY: u64 = 1_000_000_000_00;
     #[test]
     #[expected_failure]
     fun test_treasury_cap_is_burnt() {
