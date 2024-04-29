@@ -8,7 +8,7 @@ module e4c_staking::staking_tests {
     use sui::test_scenario::{Scenario};
 
     use e4c_staking::staking::{Self, GameLiquidityPool, StakingReceipt, 
-                        EStakingTimeNotEnded, EAmountMustBeGreaterThanZero, EAmountTooHigh};
+                        EStakingTimeNotEnded, EAmountMustBeGreaterThanZero, EAmountTooHigh, EStakingQuantityTooLow, EStakingQuantityTooHigh};
     use e4c_staking::config::{AdminCap, StakingConfig, Self};
     use e4c::e4c::E4C;
     
@@ -20,7 +20,11 @@ module e4c_staking::staking_tests {
     const ALICE_STAKED_AMOUNT : u64 = 2_000;
     const ALICE_STAKING_PERIOD: u64 = 90;
 
+    const TOO_SMALL_STAKING_AMOUNT: u64 = 10;
+    const TOO_LARGE_STAKING_AMOUNT: u64 = 4_000;
+
     const BOB_BALANCE: u64 = 300;
+    const BOB_BALANCE_FOR_ERROR_TESTING: u64 = 5_000;
     const BOB_STAKED_AMOUNT : u64 = 100;
     const BOB_STAKING_PERIOD: u64 = 60;
     const ESTIMATED_REWARD_TO_BOB : u64 = 3;
@@ -36,6 +40,9 @@ module e4c_staking::staking_tests {
 
     const MINTING_AMOUNT: u64 = 100_000_000;
     const MINTING_SMALL : u64 = 10;
+
+    const EXPECTED_GAME_LIQUIDITY_POOL_BALANCE: u64 = 10_000_000;
+    const EXPECTED_REMAINING_PERIOD: u64 = 5183997976;
 
     #[test]
     public fun test_calculation_locking_time() {
@@ -283,6 +290,204 @@ module e4c_staking::staking_tests {
         ts::end(scenario);
         
     }
+
+    #[test]
+    #[expected_failure(abort_code = EStakingQuantityTooHigh)]
+    public fun test_error_new_staking_receipt_over_max() {
+        let mut scenario = scenario();
+        ts::next_tx(&mut scenario, @treasury);
+        {
+            set_up_initial_condition_for_testing(
+                &mut scenario,
+                @treasury,
+                MINTING_AMOUNT,
+            )
+        };
+
+        ts::next_tx(&mut scenario, @bob);
+        {
+            let (receipt_obj, pool, config, clock)  = generate_staking_receipt_and_objects(
+                BOB_BALANCE_FOR_ERROR_TESTING,
+                TOO_LARGE_STAKING_AMOUNT,
+                BOB_STAKING_PERIOD,
+                CLOCK_SET_TIMESTAMP,
+                &mut scenario
+            );
+            transfer::public_transfer(receipt_obj, @bob);
+            return_and_destory_test_objects(pool, config, clock);
+            
+        };
+        ts::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EStakingQuantityTooLow)]
+    public fun test_error_new_staking_receipt_less_min() {
+        let mut scenario = scenario();
+        ts::next_tx(&mut scenario, @treasury);
+        {
+            set_up_initial_condition_for_testing(
+                &mut scenario,
+                @treasury,
+                MINTING_AMOUNT,
+            )
+        };
+        ts::next_tx(&mut scenario, @bob);
+        {
+            let (receipt_obj, pool, config, clock)  = generate_staking_receipt_and_objects(
+                BOB_BALANCE,
+                TOO_SMALL_STAKING_AMOUNT,
+                BOB_STAKING_PERIOD,
+                CLOCK_SET_TIMESTAMP,
+                &mut scenario
+            );
+            transfer::public_transfer(receipt_obj, @bob);
+            return_and_destory_test_objects(pool, config, clock);
+            
+        };
+        ts::end(scenario);
+        
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EAmountMustBeGreaterThanZero)]    
+    public fun test_error_place_in_pool_zero_amount() {
+        let mut scenario = scenario();
+        ts::next_tx(&mut scenario, @treasury);
+        {
+            set_up_initial_condition_for_testing(
+                &mut scenario,
+                @treasury,
+                0,
+            )
+        };
+        ts::end(scenario);
+    }
+
+    #[test]
+    public fun get_balance_in_game_liquidity_pool() {
+        let mut scenario = scenario();
+        ts::next_tx(&mut scenario, @treasury);
+        {
+            set_up_initial_condition_for_testing(
+                &mut scenario,
+                @treasury,
+                MINTING_AMOUNT,
+            )
+        };
+        ts::next_tx(&mut scenario, @treasury);
+        {   
+            let pool: GameLiquidityPool = ts::take_shared(&scenario);
+            assert_eq(EXPECTED_GAME_LIQUIDITY_POOL_BALANCE, staking::game_liquidity_pool_balance(&pool));
+            ts::return_shared(pool);
+        };
+        ts::end(scenario);
+        
+    }
+
+    #[test]
+    public fun get_staking_total_reward() {
+        let mut scenario = scenario();
+        ts::next_tx(&mut scenario, @treasury);
+        {
+            set_up_initial_condition_for_testing(
+                &mut scenario,
+                @treasury,
+                MINTING_AMOUNT,
+            )
+        };
+        ts::next_tx(&mut scenario, @bob);
+        {
+            let (receipt_obj, pool, config, clock)  = generate_staking_receipt_and_objects(
+                BOB_BALANCE,
+                BOB_STAKED_AMOUNT,
+                BOB_STAKING_PERIOD,
+                CLOCK_SET_TIMESTAMP,
+                &mut scenario
+            );
+            assert_eq(BOB_STAKED_AMOUNT + ESTIMATED_REWARD_TO_BOB, staking::staking_receipt_total_reward_amount(&receipt_obj));
+            transfer::public_transfer(receipt_obj, @bob);
+            return_and_destory_test_objects(pool, config, clock);
+            
+        };
+        ts::end(scenario);
+    }
+
+    #[test]
+    public fun get_remained_staking_period() {
+        let mut scenario = scenario();
+        ts::next_tx(&mut scenario, @treasury);
+        {
+            set_up_initial_condition_for_testing(
+                &mut scenario,
+                @treasury,
+                MINTING_AMOUNT,
+            )
+        };
+        ts::next_tx(&mut scenario, @bob);
+        {
+            let (receipt_obj, pool, config, clock)  = generate_staking_receipt_and_objects(
+                BOB_BALANCE,
+                BOB_STAKED_AMOUNT,
+                BOB_STAKING_PERIOD,
+                CLOCK_SET_TIMESTAMP,
+                &mut scenario
+            );
+            transfer::public_transfer(receipt_obj, @bob);
+            return_and_destory_test_objects(pool, config, clock);
+            
+        };
+        ts::next_tx(&mut scenario, @bob);
+        {
+            let mut clock = clock::create_for_testing(ts::ctx(&mut scenario));
+            clock::set_for_testing(&mut clock, CLOCK_SET_TIMESTAMP * 2 );
+            let received_staking_receipt = ts::take_from_sender<StakingReceipt>(&scenario);
+            let remained_staking_period = staking::staking_receipt_staking_remain_period(&received_staking_receipt, &clock);
+            assert_eq(remained_staking_period, EXPECTED_REMAINING_PERIOD);
+            ts::return_to_sender(&scenario, received_staking_receipt);
+            clock::destroy_for_testing(clock); 
+        };
+        ts::end(scenario);
+    }
+
+    #[test]
+    public fun get_remained_staking_period_finished_already() {
+        let mut scenario = scenario();
+        ts::next_tx(&mut scenario, @treasury);
+        {
+            set_up_initial_condition_for_testing(
+                &mut scenario,
+                @treasury,
+                MINTING_AMOUNT,
+            )
+        };
+        ts::next_tx(&mut scenario, @bob);
+        {
+            let (receipt_obj, pool, config, clock)  = generate_staking_receipt_and_objects(
+                BOB_BALANCE,
+                BOB_STAKED_AMOUNT,
+                BOB_STAKING_PERIOD,
+                CLOCK_SET_TIMESTAMP,
+                &mut scenario
+            );
+            transfer::public_transfer(receipt_obj, @bob);
+            return_and_destory_test_objects(pool, config, clock);
+            
+        };
+        ts::next_tx(&mut scenario, @bob);
+        {
+            let mut clock = clock::create_for_testing(ts::ctx(&mut scenario));
+            clock::set_for_testing(&mut clock, MILLIS_IN_90_DAYS + CLOCK_SET_TIMESTAMP);
+            let received_staking_receipt = ts::take_from_sender<StakingReceipt>(&scenario);
+            let remained_staking_period = staking::staking_receipt_staking_remain_period(&received_staking_receipt, &clock);
+            assert_eq(remained_staking_period, 0);
+            ts::return_to_sender(&scenario, received_staking_receipt);
+            clock::destroy_for_testing(clock); 
+        };
+        ts::end(scenario);
+    }
+
+
     #[test_only]
     public fun set_up_initial_condition_for_testing(
         scenario: &mut Scenario,

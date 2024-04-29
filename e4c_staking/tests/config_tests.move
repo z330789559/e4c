@@ -4,7 +4,9 @@ module e4c_staking::config_tests {
     use sui::test_utils::{assert_eq, destroy};
     use sui::test_scenario as ts;
 
-    use e4c_staking::config::{AdminCap, StakingConfig, Self};
+    use e4c_staking::config::{AdminCap, StakingConfig, Self,
+                EStakingTimeNotFound , EStakingTimeMustBeGreaterThanZero, EIncorrectBasisPoints,
+                EStakingTimeConflict, EStakingQuantityRangeUnmatch };
     const NEW_STAKING_TIME: u64 = 300;
     const NEW_ANNUALIZED_INTEREST_RATE_BP: u16 = 3610;
     const NEW_STAKING_QUANTITY_RANGE_MIN: u64 = 3620;
@@ -19,6 +21,7 @@ module e4c_staking::config_tests {
     const RANGE_MAX_U64: u64 = 18446744073709551615;
     const RANGE_MAX_U16: u16 = 65535;
 
+    const MAX_BPS: u16 = 10_000;
     // ADD STAKING RULE CASES NO.1
     // stake_time: 30 days
     // annualized_interest_rate_bp: 1000 : 10%
@@ -271,6 +274,126 @@ module e4c_staking::config_tests {
     }
 
     #[test]
+    #[expected_failure(abort_code = EStakingTimeMustBeGreaterThanZero)]
+    fun test_add_new_staking_rule_with_zero_staking_time() {
+        let mut scenario = ts::begin(@ambrus);
+        {
+            config::init_for_testing(ts::ctx(&mut scenario));
+        };
+
+        ts::next_tx(&mut scenario, @ambrus);
+        {   
+            let mut staking_config: StakingConfig = ts::take_shared(&scenario);
+            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
+            let cap: AdminCap = ts::take_from_sender(&scenario);
+            config::add_staking_rule(&cap, 
+                                    &mut staking_config, 
+                                    0, 
+                                    NEW_ANNUALIZED_INTEREST_RATE_BP,
+                                    NEW_STAKING_QUANTITY_RANGE_MIN,
+                                    NEW_STAKING_QUANTITY_RANGE_MAX,
+                                    &clock
+                                    );
+            ts::return_shared(staking_config);
+            ts::return_to_sender(&scenario,cap);
+            clock::destroy_for_testing(clock);
+        };
+        ts::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EIncorrectBasisPoints)]
+    fun test_add_new_staking_rule_with_incorrect_basis_points() {
+        let mut scenario = ts::begin(@ambrus);
+        {
+            config::init_for_testing(ts::ctx(&mut scenario));
+        };
+
+        ts::next_tx(&mut scenario, @ambrus);
+        {   
+            let mut staking_config: StakingConfig = ts::take_shared(&scenario);
+            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
+            let cap: AdminCap = ts::take_from_sender(&scenario);
+            config::add_staking_rule(&cap, 
+                                    &mut staking_config, 
+                                    NEW_STAKING_TIME, 
+                                    MAX_BPS + 1,
+                                    NEW_STAKING_QUANTITY_RANGE_MIN,
+                                    NEW_STAKING_QUANTITY_RANGE_MAX,
+                                    &clock
+                                    );
+            ts::return_shared(staking_config);
+            ts::return_to_sender(&scenario,cap);
+            clock::destroy_for_testing(clock);
+        };
+        ts::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EStakingQuantityRangeUnmatch)]
+    fun test_add_new_staking_rule_with_unmatch_staking_quantity_range() {
+        let mut scenario = ts::begin(@ambrus);
+        {
+            config::init_for_testing(ts::ctx(&mut scenario));
+        };
+
+        ts::next_tx(&mut scenario, @ambrus);
+        {   
+            let mut staking_config: StakingConfig = ts::take_shared(&scenario);
+            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
+            let cap: AdminCap = ts::take_from_sender(&scenario);
+            config::add_staking_rule(&cap, 
+                                    &mut staking_config, 
+                                    NEW_STAKING_TIME, 
+                                    NEW_ANNUALIZED_INTEREST_RATE_BP,
+                                    NEW_STAKING_QUANTITY_RANGE_MAX,
+                                    NEW_STAKING_QUANTITY_RANGE_MIN,
+                                    &clock
+                                    );
+            ts::return_shared(staking_config);
+            ts::return_to_sender(&scenario,cap);
+            clock::destroy_for_testing(clock);
+        };
+        ts::end(scenario);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EStakingTimeConflict)]
+    fun test_add_new_staking_rule_with_conflict_staking_time() {
+        let mut scenario = ts::begin(@ambrus);
+        {
+            config::init_for_testing(ts::ctx(&mut scenario));
+        };
+
+        ts::next_tx(&mut scenario, @ambrus);
+        {   
+            let mut staking_config: StakingConfig = ts::take_shared(&scenario);
+            let clock = clock::create_for_testing(ts::ctx(&mut scenario));
+            let cap: AdminCap = ts::take_from_sender(&scenario);
+            config::add_staking_rule(&cap, 
+                                    &mut staking_config, 
+                                    NEW_STAKING_TIME, 
+                                    NEW_ANNUALIZED_INTEREST_RATE_BP,
+                                    NEW_STAKING_QUANTITY_RANGE_MIN,
+                                    NEW_STAKING_QUANTITY_RANGE_MAX,
+                                    &clock
+                                    );
+            config::add_staking_rule(&cap, 
+                                    &mut staking_config, 
+                                    NEW_STAKING_TIME, 
+                                    NEW_ANNUALIZED_INTEREST_RATE_BP,
+                                    NEW_STAKING_QUANTITY_RANGE_MIN,
+                                    NEW_STAKING_QUANTITY_RANGE_MAX,
+                                    &clock
+                                    );
+            ts::return_shared(staking_config);
+            ts::return_to_sender(&scenario,cap);
+            clock::destroy_for_testing(clock);
+        };
+        ts::end(scenario);
+    }
+
+    #[test]
     fun test_check_details_removed_existing_staking_rule() {
         let mut scenario = ts::begin(@ambrus);
         ts::next_tx(&mut scenario, @ambrus);
@@ -299,7 +422,8 @@ module e4c_staking::config_tests {
         scenario.end();
     }
 
-    #[test,expected_failure(abort_code = e4c_staking::config::EStakingTimeNotFound)]
+    #[test]
+    #[expected_failure(abort_code = EStakingTimeNotFound)]
     fun test_remove_existing_staking_rule() {
         let mut scenario = ts::begin(@ambrus);
         ts::next_tx(&mut scenario, @ambrus);
