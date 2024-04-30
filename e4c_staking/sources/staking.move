@@ -1,10 +1,14 @@
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
+
 module e4c_staking::staking {
-    use sui::balance;
-    use sui::balance::Balance;
-    use sui::clock::{Self, Clock};
-    use sui::coin::{Self, Coin};
-    use sui::event;
-    use sui::tx_context::{sender};
+
+    use sui::{
+        balance::{Self, Balance},
+        coin::{Self, Coin},
+        event,
+        clock::Clock
+    };
 
     use e4c::e4c::E4C;
     use e4c_staking::config::{
@@ -21,9 +25,9 @@ module e4c_staking::staking {
     const EAmountMustBeGreaterThanZero: u64 = 3;
     const EAmountTooHigh: u64 = 4;
 
-    // [Owned Object]: StakingReceipt represents a receipt of staked tokens.
-    // The receipt will have complete setup upon creation including rewards since it's fixed.
-    // Once it's created, you can only unstake the tokens when the staking time is ended.
+    /// [Owned Object]: StakingReceipt represents a receipt of staked tokens.
+    /// The receipt will have complete setup upon creation including rewards since it's fixed.
+    /// Once it's created, you can only unstake the tokens when the staking time is ended.
     public struct StakingReceipt has key, store {
         id: UID,
         // Amount of tokens staked in the receipt
@@ -43,33 +47,33 @@ module e4c_staking::staking {
         reward: Balance<E4C>,
     }
 
-    // [Shared Object]: GameLiquidityPool is a store of minted E4C tokens.
+    /// [Shared Object]: GameLiquidityPool is a store of minted E4C tokens.
     public struct GameLiquidityPool has key, store {
         id: UID,
         balance: Balance<E4C>,
     }
 
-    // Event emitted when a new staking receipt is created
+    /// Event emitted when a new staking receipt is created
     public struct Staked has copy, drop {
         receipt_id: ID,
         owner: address,
         amount: u64,
     }
 
-    // Event emitted when unstaking tokens from a receipt
+    /// Event emitted when unstaking tokens from a receipt
     public struct Unstaked has copy, drop {
         receipt_id: ID,
         owner: address,
         amount: u64,
     }
 
-    // Event emitted when E4C tokens are placed in the GameLiquidityPool
+    /// Event emitted when E4C tokens are placed in the GameLiquidityPool
     public struct PoolPlaced has copy, drop {
         sender: address,
         amount: u64,
     }
 
-    // Event emitted when E4C tokens are taken from the GameLiquidityPool
+    /// Event emitted when E4C tokens are taken from the GameLiquidityPool
     public struct PoolWithdrawn has copy, drop {
         sender: address,
         amount: u64,
@@ -83,52 +87,51 @@ module e4c_staking::staking {
 
     // == Public Functions ==
 
-    // Create a new staking receipt with the given stake and staking days.
+    /// Create a new staking receipt with the given stake and staking days.
     public fun new_staking_receipt(
         stake: Coin<E4C>,
-        staking_days: u64,
+        liquidity_pool: &mut GameLiquidityPool,
         clock: &Clock,
         config: &StakingConfig,
-        liquidity_pool: &mut GameLiquidityPool,
+        staking_in_days: u64,
         ctx: &mut TxContext
     ): StakingReceipt {
-        let detail = get_staking_rule(config, staking_days);
-        let (min, max) = staking_quantity_range(detail);
-        let amount = coin::value(&stake);
+        let detail = config.get_staking_rule(staking_in_days);
+        let (min, max) = detail.staking_quantity_range();
+        let amount = stake.value();
         assert!(amount >= min, EStakingQuantityTooLow);
         assert!(amount <= max, EStakingQuantityTooHigh);
 
-        let staked_at = clock::timestamp_ms(clock);
-        let reward = staking_reward(config, staking_days, amount);
+        let staked_at = clock.timestamp_ms();
+        let reward = config.staking_reward(staking_in_days, amount);
         let id = object::new(ctx);
-        let receipt_id = object::uid_to_inner(&id);
 
         event::emit(Staked {
-            receipt_id,
-            owner: sender(ctx),
+            receipt_id: id.to_inner(),
+            owner: ctx.sender(),
             amount
         });
 
         StakingReceipt {
             id,
-            amount_staked: coin::into_balance(stake),
+            amount_staked: stake.into_balance(),
             staked_at,
-            applied_staking_days: staking_days,
-            applied_interest_rate_bp: annualized_interest_rate_bp(detail),
-            staking_end_at: calculate_locking_time(staked_at, staking_days),
-            reward: coin::into_balance(e4c_tokens_request(liquidity_pool, reward, ctx))
+            applied_staking_days: staking_in_days,
+            applied_interest_rate_bp: detail.annualized_interest_rate_bp(),
+            staking_end_at: calculate_locking_time(staked_at, staking_in_days),
+            reward: e4c_tokens_request(liquidity_pool, reward, ctx).into_balance()
         }
     }
 
-    // Unstake the tokens from the receipt.
-    // This function can be called only when the staking time is ended
+    /// Unstake the tokens from the receipt.
+    /// This function can be called only when the staking time is ended
     public fun unstake(
         receipt: StakingReceipt,
         clock: &Clock,
         ctx: &mut TxContext
     ): Coin<E4C> {
         assert!(
-            receipt.staking_end_at <= clock::timestamp_ms(clock),
+            receipt.staking_end_at <= clock.timestamp_ms(),
             EStakingTimeNotEnded
         );
 
@@ -143,67 +146,68 @@ module e4c_staking::staking {
         } = receipt;
 
         event::emit(Unstaked {
-            receipt_id: object::uid_to_inner(&id),
-            owner: sender(ctx),
-            amount: balance::value(&amount_staked) + balance::value(&reward)
+            receipt_id: id.to_inner(),
+            owner: ctx.sender(),
+            amount: amount_staked.value() + reward.value()
         });
-        object::delete(id);
 
-        let mut total_reward_coin = coin::from_balance(amount_staked, ctx);
-        let reward_amount = coin::from_balance(reward, ctx);
-        coin::join(&mut total_reward_coin, reward_amount);
+        id.delete();
+
+        let mut total_reward_coin = amount_staked.into_coin(ctx);
+        total_reward_coin.join(reward.into_coin(ctx));
         total_reward_coin
     }
 
-    // Put back E4C tokens to the GameLiquidityPool without capability check.
-    // This function can be called by anyone.
+    /// Put back E4C tokens to the GameLiquidityPool without capability check.
+    /// This function can be called by anyone.
     public fun place_in_pool(liquidity_pool: &mut GameLiquidityPool, coin: Coin<E4C>, ctx: &mut TxContext) {
-        assert!(coin::value(&coin) > 0, EAmountMustBeGreaterThanZero);
+        assert!(coin.value() > 0, EAmountMustBeGreaterThanZero);
 
         event::emit(PoolPlaced {
-            sender: sender(ctx),
-            amount: coin::value(&coin)
+            sender: ctx.sender(),
+            amount: coin.value()
         });
-        balance::join(&mut liquidity_pool.balance, coin::into_balance(coin));
+
+        liquidity_pool.balance.join(coin.into_balance());
     }
 
     // === Private Functions ===
 
-    // Take E4C tokens from the GameLiquidityPool without capability check.
-    // This function is only accessible to the friend module.
+    /// Take E4C tokens from the GameLiquidityPool without capability check.
+    /// This function is only accessible to the friend module.
     fun e4c_tokens_request(
         liquidity_pool: &mut GameLiquidityPool,
         amount: u64,
         ctx: &mut TxContext
     ): Coin<E4C> {
         assert!(amount > 0, EAmountMustBeGreaterThanZero);
-        assert!(amount <= balance::value(&liquidity_pool.balance), EAmountTooHigh);
+        assert!(amount <= liquidity_pool.balance.value(), EAmountTooHigh);
 
         event::emit(PoolWithdrawn {
-            sender: sender(ctx),
+            sender: ctx.sender(),
             amount
         });
-        let coin = coin::take(&mut liquidity_pool.balance, amount, ctx);
-        coin
+        
+        coin::take(&mut liquidity_pool.balance, amount, ctx)
     }
 
-    // Calculate the locking time in milliseconds
-    //     base_timestamp: the base timestamp in milliseconds
-    //     locking_days: the number of days to lock
+    /// Calculate the locking time in milliseconds
+    ///     base_timestamp: the base timestamp in milliseconds
+    ///     locking_days: the number of days to lock
     fun calculate_locking_time(
         base_timestamp: u64,
-        locking_days: u64
+        locking_period_in_days: u64
     ): u64 {
-        base_timestamp + locking_days * 24 * 60 * 60 * 1000
+        base_timestamp + locking_period_in_days * 24 * 60 * 60 * 1000
     }
 
     // === Public view Functions ===
     public fun game_liquidity_pool_balance(liquidity_pool: &GameLiquidityPool): u64 {
-        balance::value(&liquidity_pool.balance)
+        liquidity_pool.balance.value()
     }
 
     public fun staking_receipt_amount(receipt: &StakingReceipt): u64 {
-        balance::value(&receipt.amount_staked)
+        receipt.amount_staked.value()
     }
 
     public fun staking_receipt_staked_at(receipt: &StakingReceipt): u64 {
@@ -227,11 +231,11 @@ module e4c_staking::staking {
     }
 
     public fun staking_receipt_total_reward_amount(receipt: &StakingReceipt): u64 {
-        balance::value(&receipt.amount_staked) + balance::value(&receipt.reward)
+        receipt.amount_staked.value() + receipt.reward.value()
     }
 
     public fun staking_receipt_staking_remain_period(receipt: &StakingReceipt, clock: &Clock): u64 {
-        let current = clock::timestamp_ms(clock);
+        let current = clock.timestamp_ms();
         let staking_end_at = receipt.staking_end_at;
         if (current < staking_end_at) {
             staking_end_at - current

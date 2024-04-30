@@ -29,7 +29,12 @@ Temporary Items
 # IDE
 .idea
 
-# Move
+# Move & Node Dependencies
 build
 e4c/Move.lock
 e4c_staking/Move.lock
+.env
+.env.staking
+.env.bak
+node_modules
+.publish.res.json
