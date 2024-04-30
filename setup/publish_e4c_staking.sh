@@ -32,11 +32,29 @@ if [[ "$publish_res" =~ "error" ]]; then
 fi
 echo "Contract Deployment finished!"
 
+
+ADMIN_CAP_OBJECT_IDS=$(echo "${publish_res}" | jq -r '.objectChanges[] | select(.objectType | tostring | contains("::config::AdminCap")).objectId')
+echo "config::AdminCap Object IDs : $ADMIN_CAP_OBJECT_IDS"
+
+STAKING_CONFIG_OBJECT_IDS=$(echo "${publish_res}" | jq -r '.objectChanges[] | select(.objectType | tostring | contains("::config::StakingConfig")).objectId')
+echo "config::StakingConfig Object ID : $STAKING_CONFIG_OBJECT_IDS"
+
+GAME_LIQUIDITY_POOL_OBJECT_IDS=$(echo "${publish_res}" | jq -r '.objectChanges[] | select(.objectType | tostring | contains("::staking::GameLiquidityPool")).objectId')
+echo " config::GameLiquidityPool Object ID : $GAME_LIQUIDITY_POOL_OBJECT_IDS"
+
+PACKAGE_ID=$(echo "${publish_res}" | jq -r '.objectChanges[] | select(.type == "published").packageId')
+echo "Extracted PACKAGE_ID: $PACKAGE_ID"
+
+
 echo "Setting up environmental variables..."
 
 DIGEST=$(echo "${publish_res}" | jq -r '.digest')
 
 cat >src/.env.staking <<-API_ENV
 SUI_NETWORK=$NETWORK
-DIGEST=$DIGEST
+PUBLISH_DIGEST=$DIGEST
+STAKING_PACKAGE=$PACKAGE_ID
+GAME_LIQUIDITY_POOL=$GAME_LIQUIDITY_POOL_OBJECT_IDS
+STAKING_CONFIG=$STAKING_CONFIG_OBJECT_IDS
+ADMIN_CAP=$ADMIN_CAP_OBJECT_IDS
 API_ENV

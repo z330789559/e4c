@@ -75,4 +75,5 @@ echo "E4C staking Move.toml updated "
 cat >src/.env <<-API_ENV
 SUI_NETWORK=$NETWORK
 DIGEST=$DIGEST
+E4C_PACKAGE=$PACKAGE_ID
 API_ENV
