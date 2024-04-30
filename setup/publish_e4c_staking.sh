@@ -23,8 +23,8 @@ fi
 
 publish_res=$(sui client publish --gas-budget 200000000 --json ../e4c_staking)
 
-echo ${publish_res} >.publish.res.json
-
+echo ${publish_res} | jq '.' > .publish.res_e4c_staking.json
+echo ${publish_res}
 if [[ "$publish_res" =~ "error" ]]; then
   # If yes, print the error message and exit the script
   echo "Error during move contract publishing.  Details : $publish_res"
