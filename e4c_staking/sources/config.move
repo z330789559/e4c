@@ -6,6 +6,7 @@ module e4c_staking::config {
         clock::Clock,
         package,
         event,
+        math,
         vec_map::{Self, VecMap}
     };
 
@@ -61,6 +62,14 @@ module e4c_staking::config {
         removed_quantity_range_min: u64,
         removed_quantity_range_max: u64,
     }
+
+    // === Staking rules ===
+    // ============================================================
+    // | T (Staking Days) | APR (Annualized Percentage Rate) | Staking Quantity Range        | ROI (Return on Investment) |
+    // --------------------------------------------------------------------------------------------------------------------
+    // |  30              | 8%                               | 1 - 100 (including 100)       | 0.67%                      |              
+    // |  60              | 10%                              | 100 - 1000 (including 1000)   | 1.67%
+    // |  90              | 15%                              | 1000 - ∞  (more than 1000)    | 3.75%
 
     fun init(otw: CONFIG, ctx: &mut TxContext) {
         // staking config initialization
@@ -164,7 +173,9 @@ module e4c_staking::config {
         // Formula: reward = (N * T / 360 * amountE4C)
         // N = annualized interest rate in basis points
         // T = staking time in days
-        let reward = (((rule.annualized_interest_rate_bp as u64) * staking_days / 360) * staking_quantity) / 10_000;
+        let apr_multiply_with_staking_days = rule.annualized_interest_rate_bp as u64 * staking_days;
+        let divided_by_360 = math::divide_and_round_up(apr_multiply_with_staking_days, 360);
+        let reward = (divided_by_360 * staking_quantity) / 100;
         reward as u64
     }
 
