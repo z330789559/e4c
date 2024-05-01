@@ -48,7 +48,7 @@ module e4c_staking::staking {
     }
 
     /// [Shared Object]: GameLiquidityPool is a store of minted E4C tokens.
-    public struct GameLiquidityPool has key, store {
+    public struct GameLiquidityPool has key {
         id: UID,
         balance: Balance<E4C>,
     }
@@ -80,7 +80,7 @@ module e4c_staking::staking {
     }
 
     fun init(ctx: &mut TxContext) {
-        transfer::public_share_object(
+        transfer::share_object(
             GameLiquidityPool { id: object::new(ctx), balance: balance::zero() }
         );
     }
