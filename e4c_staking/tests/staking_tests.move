@@ -119,6 +119,37 @@ module e4c_staking::staking_tests {
         };
     }
     
+    #[test]
+    #[expected_failure(abort_code = EStakingQuantityTooLow)]
+    fun test_30days_condition_to_60days_staking_rule(){
+        let mut scenario = scenario();
+        init_and_gen_staking_receipt(
+            @alice,
+            MINTING_AMOUNT,
+            400, // balance
+            100, // staking amount
+            60, // staking days
+            CLOCK_SET_TIMESTAMP,
+            &mut scenario
+        );
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EStakingQuantityTooLow)]
+    fun test_60days_condition_to_90days_staking_rule(){
+        let mut scenario = scenario();
+        init_and_gen_staking_receipt(
+            @alice,
+            MINTING_AMOUNT,
+            4000, // balance
+            1000, // staking amount
+            90, // staking days
+            CLOCK_SET_TIMESTAMP,
+            &mut scenario
+        );
+        scenario.end();
+    }
 
     #[test]
     fun test_calculation_locking_time() {

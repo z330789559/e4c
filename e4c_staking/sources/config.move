@@ -175,7 +175,7 @@ module e4c_staking::config {
         // T = staking time in days
         let apr_multiply_with_staking_days = rule.annualized_interest_rate_bp as u64 * staking_days;
         let divided_by_360 = math::divide_and_round_up(apr_multiply_with_staking_days, 360);
-        let reward = (divided_by_360 * staking_quantity) / 100;
+        let reward = (divided_by_360 * staking_quantity) / 10_000;
         reward as u64
     }
 
