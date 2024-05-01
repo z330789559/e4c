@@ -70,8 +70,10 @@ module e4c_staking::staking_tests {
         time_setting: u64,
         scenario: &mut Scenario,
     ): (StakingReceipt, GameLiquidityPool, StakingConfig, Clock) {
-        let mut balance = balance::create_for_testing(current_balance * E4C_DECIMALS);
-        let stake = coin::take(&mut balance, staking_amount * E4C_DECIMALS, scenario.ctx());    
+        let balance_for_testing = current_balance * E4C_DECIMALS;
+        let staking_amount_for_testing = staking_amount * E4C_DECIMALS;
+        let mut balance = balance::create_for_testing(balance_for_testing);
+        let stake = coin::take(&mut balance, staking_amount_for_testing, scenario.ctx());    
         let mut clock = clock::create_for_testing(scenario.ctx());
         clock.set_for_testing(time_setting);
         let mut pool: GameLiquidityPool = scenario.take_shared();
@@ -506,8 +508,8 @@ module e4c_staking::staking_tests {
         {
             let mut pool: GameLiquidityPool = scenario.take_shared();
             let config: StakingConfig = scenario.take_shared();
-            
-            let total_minted_e4c = coin::mint_for_testing<E4C>(coin_amount * E4C_DECIMALS, scenario.ctx()); 
+            let minting_amount = coin_amount * E4C_DECIMALS; 
+            let total_minted_e4c = coin::mint_for_testing<E4C>(minting_amount, scenario.ctx()); 
             let total_minted_value = total_minted_e4c.value<E4C>();
             let mut total_balance = coin::into_balance<E4C>(total_minted_e4c);
             let e4c_to_pool = coin::take(&mut total_balance, total_minted_value/10, scenario.ctx());
