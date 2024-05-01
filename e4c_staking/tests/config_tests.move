@@ -13,7 +13,7 @@ module e4c_staking::config_tests {
     const NEW_STAKING_QUANTITY_RANGE_MIN: u64 = 3620;
     const NEW_STAKING_QUANTITY_RANGE_MAX: u64 = 36300;
     const STAKING_AMOUNT: u64 = 3620;
-    const PRE_CALCULATION_STAKING_REWARD: u64 = 108925;
+    const PRE_CALCULATION_STAKING_REWARD: u64 = 1089;
     
     const TARGETED_REMOVE_STAKING_TIME: u64 = 90;
     const REMOVING_STAKING_QUANTITY_RANGE_MIN: u64 = 1000;
@@ -23,7 +23,7 @@ module e4c_staking::config_tests {
     const RANGE_MAX_U16: u16 = 65535;
 
     const MAX_BPS: u16 = 10_000;
-
+    const E4C_DECIMALS: u64 = 100;
 
     fun reward_fuzzing(
         staking_quantity: u64, 
@@ -53,7 +53,7 @@ module e4c_staking::config_tests {
     // staking_quantity_range_max: 100
     #[test]
     fun test_manual_fuzzy_on_reward_change_1() {
-        reward_fuzzing(100, 30, 800, 1, 100, 67);
+        reward_fuzzing(100 * E4C_DECIMALS, 30, 800, 1, 100, 67);
     }
 
     // ADD STAKING RULE CASES NO.2
@@ -63,7 +63,7 @@ module e4c_staking::config_tests {
     // staking_quantity_range_max: 1000
     #[test]
     fun test_manual_fuzzy_on_reward_change_2() {
-        reward_fuzzing(1000, 60, 1000, 100, 1000, 1670);
+        reward_fuzzing(1_000 * E4C_DECIMALS, 60, 1000, 100, 1000, 1670);
     }
 
     // ADD STAKING RULE CASES NO.3
@@ -73,15 +73,15 @@ module e4c_staking::config_tests {
     // staking_quantity_range_max: 18446744073709551615 : MAX_U64
     #[test]
     fun test_manual_fuzzy_on_reward_change_3() {
-        reward_fuzzing(10000, 90, 1500, 100, 1000, 37500);
+        reward_fuzzing(10_000 * E4C_DECIMALS, 90, 1500, 100, 1000, 37500);
     }
-    
+
     // ADD STAKING RULE EDGE CASES NO.1
     // stake_time: 360 day
     // annualized_interest_rate_bp: 1 : 0.01%
     #[test]
     fun test_manual_fuzzy_on_reward_MAX_U64_1() {
-        reward_fuzzing(RANGE_MAX_U64, 360, 1, 3000, RANGE_MAX_U64, 184467440737095516);
+        reward_fuzzing(RANGE_MAX_U64, 360, 1, 3000, RANGE_MAX_U64, 1844674407370955);
     }
 
     // ADD STAKING RULE EDGE CASES NO.2
@@ -89,7 +89,7 @@ module e4c_staking::config_tests {
     // annualized_interest_rate_bp: 1 : 0.01%
     #[test]
     fun test_error_manual_fuzzy_on_reward_MAX_U64_2() {
-        reward_fuzzing(1, 360, 1, 1, RANGE_MAX_U64, 0);
+        reward_fuzzing(1 * E4C_DECIMALS, 360, 1, 1, RANGE_MAX_U64, 0);
     }
     
     // ADD STAKING RULE EDGE CASES NO.3
@@ -98,7 +98,7 @@ module e4c_staking::config_tests {
 
     #[test]
     fun test_manual_fuzzy_on_reward_edge() {
-        reward_fuzzing(1, RANGE_MAX_U64, 1, 1, 100, 512409557603043);
+        reward_fuzzing(1 * E4C_DECIMALS, RANGE_MAX_U64, 1, 1, 100, 512409557603043);
     }
 
     // failed to overflow u64
@@ -111,7 +111,7 @@ module e4c_staking::config_tests {
 
     #[test]
     fun test_manual_fuzzy_on_reward_edge_MAX_U16() {
-        reward_fuzzing(10000, 360, RANGE_MAX_U16, 1, 10000, RANGE_MAX_U16 as u64 * 100);
+        reward_fuzzing(10_000 * E4C_DECIMALS, 360, RANGE_MAX_U16, 1, 10000, RANGE_MAX_U16 as u64 * 100);
     }
 
     fun return_all(
@@ -283,7 +283,7 @@ module e4c_staking::config_tests {
             
             let (removed_ranges_min, removed_range_max) = removed.staking_quantity_range();
 
-            assert_eq(removed_ranges_min, REMOVING_STAKING_QUANTITY_RANGE_MIN);
+            assert_eq(removed_ranges_min, REMOVING_STAKING_QUANTITY_RANGE_MIN * E4C_DECIMALS);
             assert_eq(removed_range_max, RANGE_MAX_U64);
             assert_eq(removed.annualized_interest_rate_bp(), REMOVING_ANNUALIZED_INTEREST_RATE_BP);
             

@@ -20,7 +20,7 @@ module e4c_staking::config {
     // === Constants ===
     const MAX_U64: u64 = 18446744073709551615;
     const MAX_BPS: u16 = 10_000;
-
+    const E4C_DECIMALS: u64 = 100;
 
     // === Structs ===
 
@@ -81,21 +81,21 @@ module e4c_staking::config {
         config.staking_rules.insert(30, StakingRule {
             staking_days: 30, // 30 days
             annualized_interest_rate_bp: 800, // 8%
-            staking_quantity_range_min: 1,
-            staking_quantity_range_max: 100,
+            staking_quantity_range_min: 1 * E4C_DECIMALS,
+            staking_quantity_range_max: 100 * E4C_DECIMALS,
         });
 
         config.staking_rules.insert(60, StakingRule {
             staking_days: 60, // 60 days
             annualized_interest_rate_bp: 1000, // 10%
-            staking_quantity_range_min: 100,
-            staking_quantity_range_max: 1000,
+            staking_quantity_range_min: 100 * E4C_DECIMALS,
+            staking_quantity_range_max: 1000 * E4C_DECIMALS,
         });
 
         config.staking_rules.insert(90, StakingRule {
             staking_days: 90, // 90 days
             annualized_interest_rate_bp: 1500, // 15%
-            staking_quantity_range_min: 1000,
+            staking_quantity_range_min: 1000 * E4C_DECIMALS,
             staking_quantity_range_max: MAX_U64,
         });
         
@@ -175,7 +175,7 @@ module e4c_staking::config {
         // T = staking time in days
         let apr_multiply_with_staking_days = rule.annualized_interest_rate_bp as u64 * staking_days;
         let divided_by_360 = math::divide_and_round_up(apr_multiply_with_staking_days, 360);
-        let reward = (divided_by_360 * staking_quantity) / 10_000;
+        let reward = (divided_by_360 * staking_quantity) / (MAX_BPS as u64);
         reward as u64
     }
 
