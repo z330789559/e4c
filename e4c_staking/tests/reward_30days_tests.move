@@ -106,8 +106,7 @@ module e4c_staking::reward_30_days_tests {
         scenario.return_to_sender(receipt_obj);
     }
     #[test]
-    #[expected_failure]
-    fun day30_test_1() {
+    fun day30_test_01() {
         let mut scenario = scenario();
         day30_initiation(&mut scenario, SIMULATION_1_AMOUNT);
         ts::next_tx(&mut scenario, @alice);
@@ -119,7 +118,6 @@ module e4c_staking::reward_30_days_tests {
     }
 
     #[test]
-    #[expected_failure]
     fun day30_test_2() {
         let mut scenario = scenario();
         day30_initiation(&mut scenario, SIMULATION_2_AMOUNT);
@@ -132,7 +130,6 @@ module e4c_staking::reward_30_days_tests {
     }
 
     #[test]
-    #[expected_failure]
     fun day30_test_3() {
         let mut scenario = scenario();
         day30_initiation(&mut scenario, SIMULATION_3_AMOUNT);

@@ -162,7 +162,7 @@ module e4c_staking::staking_tests {
             @alice,
             MINTING_AMOUNT,
             100 * E4C_DECIMALS, // balance
-            100 * E4C_DECIMALS, // staking amount
+            100, // 1 E4C staking amount
             30, // staking days
             CLOCK_SET_TIMESTAMP,
             &mut scenario
