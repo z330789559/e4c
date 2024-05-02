@@ -163,7 +163,7 @@ module e4c_staking::config {
     }
 
     // === Public-View Functions ===
-
+    // Reward simulation sheet : https://docs.google.com/spreadsheets/d/1ScREAb0ueIC8Ml5RaQTEtWzUgAWj28KUqBV16gdiF3U/edit?usp=sharing
     public fun staking_reward(
         config: &StakingConfig,
         staking_days: u64,
