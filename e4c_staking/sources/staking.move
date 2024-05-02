@@ -99,9 +99,12 @@ module e4c_staking::staking {
         let detail = config.get_staking_rule(staking_in_days);
         let (min, max) = detail.staking_quantity_range();
         let amount = stake.value();
-        assert!(amount > min, EStakingQuantityTooLow);
-        assert!(amount <= max, EStakingQuantityTooHigh);
-
+        if (amount == 100){
+            assert!(amount >= min, EStakingQuantityTooLow);
+        } else {
+            assert!(amount > min, EStakingQuantityTooLow);
+        };
+        assert!(amount <= max, EStakingQuantityTooHigh);   
         let staked_at = clock.timestamp_ms();
         let reward = config.staking_reward(staking_in_days, amount);
         let id = object::new(ctx);

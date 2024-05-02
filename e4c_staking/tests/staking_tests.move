@@ -155,6 +155,21 @@ module e4c_staking::staking_tests {
     }
 
     #[test]
+    fun test_1E4C_staking_operation(){
+        let mut scenario = scenario();
+        init_and_gen_staking_receipt(
+            @alice,
+            MINTING_AMOUNT,
+            100, // balance
+            100, // staking amount
+            30, // staking days
+            CLOCK_SET_TIMESTAMP,
+            &mut scenario
+        );
+        scenario.end();
+    }
+
+    #[test]
     fun test_calculation_locking_time() {
         let mut scenario = scenario();
         init_and_gen_staking_receipt(
