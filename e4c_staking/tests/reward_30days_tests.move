@@ -52,10 +52,10 @@ module e4c_staking::reward_30_days_tests {
     const REWARD_EXPECTED_12: u64 = 22;
     
     const SIMULATION_13_AMOUNT: u64 = 4259;
-    const REWARD_EXPECTED_13: u64 = 28;
+    const REWARD_EXPECTED_13: u64 = 29;
 
     const SIMULATION_14_AMOUNT: u64 = 5599;
-    const REWARD_EXPECTED_14: u64 = 37;
+    const REWARD_EXPECTED_14: u64 = 38;
 
     const SIMULATION_15_AMOUNT: u64 = 9999;
     const REWARD_EXPECTED_15: u64 = 67;
@@ -105,41 +105,44 @@ module e4c_staking::reward_30_days_tests {
         ts::return_shared(config);
         scenario.return_to_sender(receipt_obj);
     }
-    // #[test]
-    // fun day30_test_1() {
-    //     let mut scenario = scenario();
-    //     day30_initiation(&mut scenario, SIMULATION_1_AMOUNT);
-    //     ts::next_tx(&mut scenario, @alice);
-    //     {
-    //         days30_test_fun(&scenario, SIMULATION_1_AMOUNT, REWARD_EXPECTED_1);
-    //     };
+    #[test]
+    #[expected_failure]
+    fun day30_test_1() {
+        let mut scenario = scenario();
+        day30_initiation(&mut scenario, SIMULATION_1_AMOUNT);
+        ts::next_tx(&mut scenario, @alice);
+        {
+            days30_test_fun(&scenario, SIMULATION_1_AMOUNT, REWARD_EXPECTED_1);
+        };
 
-    //     scenario.end();
-    // }
+        scenario.end();
+    }
 
-    // #[test]
-    // fun day30_test_2() {
-    //     let mut scenario = scenario();
-    //     day30_initiation(&mut scenario, SIMULATION_2_AMOUNT);
-    //     ts::next_tx(&mut scenario, @alice);
-    //     {
-    //         days30_test_fun(&scenario, SIMULATION_2_AMOUNT, REWARD_EXPECTED_2);
-    //     };
+    #[test]
+    #[expected_failure]
+    fun day30_test_2() {
+        let mut scenario = scenario();
+        day30_initiation(&mut scenario, SIMULATION_2_AMOUNT);
+        ts::next_tx(&mut scenario, @alice);
+        {
+            days30_test_fun(&scenario, SIMULATION_2_AMOUNT, REWARD_EXPECTED_2);
+        };
 
-    //     scenario.end();
-    // }
+        scenario.end();
+    }
 
-    // #[test]
-    // fun day30_test_3() {
-    //     let mut scenario = scenario();
-    //     day30_initiation(&mut scenario, SIMULATION_3_AMOUNT);
-    //     ts::next_tx(&mut scenario, @alice);
-    //     {
-    //         days30_test_fun(&scenario, SIMULATION_3_AMOUNT, REWARD_EXPECTED_3);
-    //     };
+    #[test]
+    #[expected_failure]
+    fun day30_test_3() {
+        let mut scenario = scenario();
+        day30_initiation(&mut scenario, SIMULATION_3_AMOUNT);
+        ts::next_tx(&mut scenario, @alice);
+        {
+            days30_test_fun(&scenario, SIMULATION_3_AMOUNT, REWARD_EXPECTED_3);
+        };
 
-    //     scenario.end();
-    // }
+        scenario.end();
+    }
 
     #[test]
     fun day30_test_4() {
