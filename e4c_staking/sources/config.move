@@ -163,7 +163,7 @@ module e4c_staking::config {
     }
 
     // === Public-View Functions ===
-
+    // Reward simulation sheet : https://docs.google.com/spreadsheets/d/1ScREAb0ueIC8Ml5RaQTEtWzUgAWj28KUqBV16gdiF3U/edit?usp=sharing
     public fun staking_reward(
         config: &StakingConfig,
         staking_days: u64,
@@ -175,8 +175,13 @@ module e4c_staking::config {
         // T = staking time in days
         let apr_multiply_with_staking_days = rule.annualized_interest_rate_bp as u64 * staking_days;
         let divided_by_360 = math::divide_and_round_up(apr_multiply_with_staking_days, 360);
-        let reward = (divided_by_360 * staking_quantity) / (MAX_BPS as u64);
-        reward as u64
+        let reward = mul_div_round(divided_by_360, staking_quantity, 10_000);
+        reward
+    }
+    //Reference :https://github.com/CetusProtocol/integer-mate/blob/main/sui/sources/full_math_u64.move#L7-L10
+    public fun mul_div_round(num1: u64, num2: u64, denom: u64): u64 {
+        let r = (((num1 as u128) * (num2 as u128)) + ((denom as u128) >> 1)) / (denom as u128);
+        (r as u64)
     }
 
     public fun staking_quantity_range(
