@@ -162,7 +162,23 @@ module e4c_staking::staking_tests {
             @alice,
             MINTING_AMOUNT,
             100 * E4C_DECIMALS, // balance
-            100, // 1 E4C staking amount
+            1 * E4C_DECIMALS, // 1 E4C staking amount
+            30, // staking days
+            CLOCK_SET_TIMESTAMP,
+            &mut scenario
+        );
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EStakingQuantityTooLow)]
+    fun test_0_99_E4C_staking_operation(){
+        let mut scenario = scenario();
+        init_and_gen_staking_receipt(
+            @alice,
+            MINTING_AMOUNT,
+            100 * E4C_DECIMALS, // balance
+            99, // 0.99 E4C staking amount
             30, // staking days
             CLOCK_SET_TIMESTAMP,
             &mut scenario
