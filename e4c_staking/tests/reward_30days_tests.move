@@ -12,7 +12,8 @@ module e4c_staking::reward_30_days_tests {
     use e4c_staking::staking_tests::{Self};
 
     // Simulation sheets : https://docs.google.com/spreadsheets/d/1ScREAb0ueIC8Ml5RaQTEtWzUgAWj28KUqBV16gdiF3U/edit?usp=sharing
-    const E4CTokenMaxSupply: u64 = 1_000_000_000_00;
+    const E4C_DECIMALS: u64 = 1_000_000_000;
+    const E4CTokenMaxSupply: u64 = 1_000_000_000 * E4C_DECIMALS;
     // const ROI_30_DAYS : u64 = 67;
 
     const SIMULATION_1_AMOUNT: u64 = 100;

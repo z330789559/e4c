@@ -23,7 +23,7 @@ module e4c_staking::config_tests {
     const RANGE_MAX_U16: u16 = 65535;
 
     const MAX_BPS: u16 = 10_000;
-    const E4C_DECIMALS: u64 = 100;
+    const E4C_DECIMALS: u64 = 1_000_000_000;
 
     fun reward_fuzzing(
         staking_quantity: u64, 

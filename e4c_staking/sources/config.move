@@ -20,7 +20,7 @@ module e4c_staking::config {
     // === Constants ===
     const MAX_U64: u64 = 18446744073709551615;
     const MAX_BPS: u16 = 10_000;
-    const E4C_DECIMALS: u64 = 100;
+    const E4C_DECIMALS: u64 = 1_000_000_000;
 
     // === Structs ===
 
@@ -81,7 +81,7 @@ module e4c_staking::config {
         config.staking_rules.insert(30, StakingRule {
             staking_days: 30, // 30 days
             annualized_interest_rate_bp: 800, // 8%
-            staking_quantity_range_min: 99,
+            staking_quantity_range_min: 99 * E4C_DECIMALS,
             staking_quantity_range_max: 100 * E4C_DECIMALS,
         });
 

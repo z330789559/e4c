@@ -16,7 +16,7 @@ module e4c_staking::staking_tests {
     use e4c_staking::config::{AdminCap, StakingConfig};
     use e4c::e4c::E4C;
     
-    const E4C_DECIMALS: u64 = 100;
+    const E4C_DECIMALS: u64 = 1_000_000_000;
 
     const CLOCK_SET_TIMESTAMP: u64 = 2024;
     const MILLIS_IN_90_DAYS: u64 = 7776000000;

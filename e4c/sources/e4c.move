@@ -4,19 +4,21 @@
 module e4c::e4c {
     use sui::{
         coin::{Self},
-        balance
+        balance,
+        url
     };
 
     // === Constants ===
     /// The maximum supply of the E4C token. 1 Billion E4C tokens including two decimals.
-    const E4CTokenMaxSupply: u64 = 1_000_000_000_00;
+    const E4CTokenDecimalPoints: u64 = 1_000_000_000;
+    const E4CTokenMaxSupply: u64 = 1_000_000_000 * E4CTokenDecimalPoints;
 
     // TODO: update the token metadata according to the requirements.
-    const E4CTokenDecimals: u8 = 2;
+    const E4CTokenDecimals: u8 = 9;
     const E4CTokenSymbol: vector<u8> = b"E4C";
     const E4CTokenName: vector<u8> = b"$E4C";
-    const E4CTokenDescription: vector<u8> = b"$E4C is ...";
-
+    const E4CTokenDescription: vector<u8> = b"The $E4C token, serving as the universal currency within the E4C gaming ecosystem known as E4Cverse. It is designed to satisfy the development needs of the E4C gaming ecosystem";
+    const E4CTokenURL: vector<u8> = b"https://ambrus.s3.amazonaws.com/E4C-tokenicon.png";
     /// [frozen Object] E4CFunded is a struct that holds the total supply of the E4C token.
     public struct E4CTotalSupply has key {
         id: UID,
@@ -34,7 +36,7 @@ module e4c::e4c {
             E4CTokenSymbol,
             E4CTokenName,
             E4CTokenDescription,
-            option::none(),
+            option::some(url::new_unsafe_from_bytes(E4CTokenURL)),
             ctx
         );
         // Mint the coin and get the coin object.
