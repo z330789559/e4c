@@ -38,3 +38,6 @@ e4c_staking/Move.lock
 .env.bak
 node_modules
 .publish.res.json
+.trace
+.coverage_map.mvcov
+.lock

@@ -16,40 +16,45 @@ module e4c_staking::staking_tests {
     use e4c_staking::config::{AdminCap, StakingConfig};
     use e4c::e4c::E4C;
     
+    const E4C_DECIMALS: u64 = 100;
+
     const CLOCK_SET_TIMESTAMP: u64 = 2024;
     const MILLIS_IN_90_DAYS: u64 = 7776000000;
     const MILLIS_IN_60_DAYS: u64 = 5184000000;
+    const MILLIS_IN_30_DAYS: u64 = 2592000000;
 
-    const ALICE_BALANCE: u64 = 3_000;
-    const ALICE_STAKED_AMOUNT : u64 = 2_000;
+    const ALICE_BALANCE: u64 = 3_000 * E4C_DECIMALS;
+    const ALICE_STAKED_AMOUNT : u64 = 2_000 * E4C_DECIMALS;
     const ALICE_STAKING_PERIOD: u64 = 90;
 
-    const TOO_SMALL_STAKING_AMOUNT: u64 = 10;
-    const TOO_LARGE_STAKING_AMOUNT: u64 = 4_000;
+    const TOO_SMALL_STAKING_AMOUNT: u64 = 10 * E4C_DECIMALS;
+    const TOO_LARGE_STAKING_AMOUNT: u64 = 4_000 * E4C_DECIMALS;
 
-    const BOB_BALANCE: u64 = 300;
-    const BOB_BALANCE_FOR_ERROR_TESTING: u64 = 5_000;
-    const BOB_STAKED_AMOUNT : u64 = 100;
-    const BOB_STAKING_PERIOD: u64 = 60;
-    const ESTIMATED_REWARD_TO_BOB : u64 = 1;
-    const ESTIMATED_INTEREST_RATE_ON_60_DAYS: u16 = 1000;
+    const BOB_BALANCE: u64 = 300 * E4C_DECIMALS;
+    const BOB_BALANCE_FOR_ERROR_TESTING: u64 = 5_000 * E4C_DECIMALS;
+    const BOB_STAKED_AMOUNT : u64 = 100 * E4C_DECIMALS;
+    const BOB_STAKING_PERIOD: u64 = 30;
+    const ESTIMATED_REWARD_TO_BOB : u64 = 67;
+    const ESTIMATED_INTEREST_RATE_ON_30_DAYS: u16 = 800;
+
+    const BOB_BALANCE_2: u64 = 3000 * E4C_DECIMALS;
+    const BOB_STAKING_PERIOD_2: u64 = 60;
 
     const STRANGE_STAKING_PERIOD: u64 = 10_000;
     const STRANGE_INTEREST: u16 = 0;
-    const STRANGE_STAKING_QUANTITY_MIN: u64 = 10_000;
-    const STRANGE_STAKING_QUANTITY_MAX: u64 = 100_000;
-    const ESTIMTED_REWARD_FROM_STRANGES : u64 = 0;
-    const CHAD_BALANCE: u64 = 16_000;
-    const CHAD_STAKED_AMOUNT : u64 = 12_000;
+    const STRANGE_STAKING_QUANTITY_MIN: u64 = 10_000 * E4C_DECIMALS;
+    const STRANGE_STAKING_QUANTITY_MAX: u64 = 100_000 * E4C_DECIMALS;
+    const ESTIMTED_REWARD_FROM_STRANGES : u64 = 0 * E4C_DECIMALS;
+    const CHAD_BALANCE: u64 = 16_000 * E4C_DECIMALS;
+    const CHAD_STAKED_AMOUNT : u64 = 12_000 * E4C_DECIMALS;
 
-    const MINTING_AMOUNT: u64 = 100_000_000;
-    const MINTING_SMALL : u64 = 10;
+    const MINTING_AMOUNT: u64 = 100_000_000 * E4C_DECIMALS;
+    const MINTING_SMALL : u64 = 10 * E4C_DECIMALS;
 
-    const EXPECTED_GAME_LIQUIDITY_POOL_BALANCE: u64 = 10_000_000;
-    const EXPECTED_REMAINING_PERIOD: u64 = 5183997976;
-
-
-    fun return_and_destory_test_objects(
+    const EXPECTED_GAME_LIQUIDITY_POOL_BALANCE: u64 = 10_000_000 * E4C_DECIMALS;
+    
+    #[test_only]
+    public fun return_and_destory_test_objects(
         pool: GameLiquidityPool,
         config: StakingConfig,
         clock: Clock,
@@ -58,16 +63,18 @@ module e4c_staking::staking_tests {
         ts::return_shared(config);
         clock::destroy_for_testing(clock);
     }
-
-    fun generate_staking_receipt_and_objects(
+    #[test_only]
+    public fun generate_staking_receipt_and_objects(
         current_balance: u64,
         staking_amount: u64,
         staking_in_days: u64,
         time_setting: u64,
         scenario: &mut Scenario,
     ): (StakingReceipt, GameLiquidityPool, StakingConfig, Clock) {
-        let mut balance = balance::create_for_testing(current_balance);
-        let stake = coin::take(&mut balance, staking_amount, scenario.ctx());    
+        let balance_for_testing = current_balance;
+        let staking_amount_for_testing = staking_amount;
+        let mut balance = balance::create_for_testing(balance_for_testing);
+        let stake = coin::take(&mut balance, staking_amount_for_testing, scenario.ctx());    
         let mut clock = clock::create_for_testing(scenario.ctx());
         clock.set_for_testing(time_setting);
         let mut pool: GameLiquidityPool = scenario.take_shared();
@@ -84,8 +91,8 @@ module e4c_staking::staking_tests {
         balance.destroy_for_testing();
         (receipt_obj, pool, config, clock)
     }
-
-    fun init_and_gen_staking_receipt(
+    #[test_only]
+    public fun init_and_gen_staking_receipt(
         active_address: address,
         minting_amount: u64,
         current_balance: u64,
@@ -116,6 +123,68 @@ module e4c_staking::staking_tests {
         };
     }
     
+    #[test]
+    #[expected_failure(abort_code = EStakingQuantityTooLow)]
+    fun test_30days_condition_to_60days_staking_rule(){
+        let mut scenario = scenario();
+        init_and_gen_staking_receipt(
+            @alice,
+            MINTING_AMOUNT,
+            400 * E4C_DECIMALS, // balance
+            100 * E4C_DECIMALS, // staking amount
+            60, // staking days
+            CLOCK_SET_TIMESTAMP,
+            &mut scenario
+        );
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EStakingQuantityTooLow)]
+    fun test_60days_condition_to_90days_staking_rule(){
+        let mut scenario = scenario();
+        init_and_gen_staking_receipt(
+            @alice,
+            MINTING_AMOUNT,
+            4000 * E4C_DECIMALS, // balance
+            1000 * E4C_DECIMALS, // staking amount
+            90, // staking days
+            CLOCK_SET_TIMESTAMP,
+            &mut scenario
+        );
+        scenario.end();
+    }
+
+    #[test]
+    fun test_1E4C_staking_operation(){
+        let mut scenario = scenario();
+        init_and_gen_staking_receipt(
+            @alice,
+            MINTING_AMOUNT,
+            100 * E4C_DECIMALS, // balance
+            1 * E4C_DECIMALS, // 1 E4C staking amount
+            30, // staking days
+            CLOCK_SET_TIMESTAMP,
+            &mut scenario
+        );
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EStakingQuantityTooLow)]
+    fun test_0_99_E4C_staking_operation(){
+        let mut scenario = scenario();
+        init_and_gen_staking_receipt(
+            @alice,
+            MINTING_AMOUNT,
+            100 * E4C_DECIMALS, // balance
+            99, // 0.99 E4C staking amount
+            30, // staking days
+            CLOCK_SET_TIMESTAMP,
+            &mut scenario
+        );
+        scenario.end();
+    }
 
     #[test]
     fun test_calculation_locking_time() {
@@ -290,8 +359,8 @@ module e4c_staking::staking_tests {
             assert_eq (receipt_obj.staking_receipt_amount(), BOB_STAKED_AMOUNT);
             assert_eq (receipt_obj.staking_receipt_staked_at(), CLOCK_SET_TIMESTAMP);
             assert_eq (receipt_obj.staking_receipt_applied_staking_days(), BOB_STAKING_PERIOD);
-            assert_eq (receipt_obj.staking_receipt_applied_interest_rate_bp(), ESTIMATED_INTEREST_RATE_ON_60_DAYS);
-            assert_eq (receipt_obj.staking_receipt_staking_end_at(), CLOCK_SET_TIMESTAMP + MILLIS_IN_60_DAYS);
+            assert_eq (receipt_obj.staking_receipt_applied_interest_rate_bp(), ESTIMATED_INTEREST_RATE_ON_30_DAYS);
+            assert_eq (receipt_obj.staking_receipt_staking_end_at(), CLOCK_SET_TIMESTAMP + MILLIS_IN_30_DAYS);
             assert_eq (receipt_obj.staking_receipt_reward(), ESTIMATED_REWARD_TO_BOB);
 
             transfer::public_transfer(receipt_obj, @bob);   
@@ -305,7 +374,7 @@ module e4c_staking::staking_tests {
             // ===== Start unstaking =====
             clock.increment_for_testing(MILLIS_IN_60_DAYS);
             let reward_coin = received_staking_receipt.unstake(&clock, scenario.ctx());
-            assert_eq(BOB_STAKED_AMOUNT + ESTIMATED_REWARD_TO_BOB, reward_coin.value());
+            assert_eq((BOB_STAKED_AMOUNT) + ESTIMATED_REWARD_TO_BOB, reward_coin.value());
 
             transfer::public_transfer(reward_coin, @bob);
             clock::destroy_for_testing(clock); 
@@ -337,9 +406,9 @@ module e4c_staking::staking_tests {
         init_and_gen_staking_receipt(
             @bob,
             MINTING_AMOUNT,
-            BOB_BALANCE,
+            BOB_BALANCE_2,
             TOO_SMALL_STAKING_AMOUNT,
-            BOB_STAKING_PERIOD,
+            BOB_STAKING_PERIOD_2,
             CLOCK_SET_TIMESTAMP,
             &mut scenario
         );
@@ -398,7 +467,7 @@ module e4c_staking::staking_tests {
         ts::next_tx(&mut scenario, @bob);
         {
             let received_staking_receipt = scenario.take_from_sender<StakingReceipt>();
-            assert_eq(received_staking_receipt.staking_receipt_total_reward_amount(), BOB_STAKED_AMOUNT + ESTIMATED_REWARD_TO_BOB);
+            assert_eq(received_staking_receipt.staking_receipt_total_reward_amount(), (BOB_STAKED_AMOUNT + ESTIMATED_REWARD_TO_BOB));
             scenario.return_to_sender(received_staking_receipt);
         };
         
@@ -421,9 +490,10 @@ module e4c_staking::staking_tests {
         {
             let mut clock = clock::create_for_testing(scenario.ctx());
             clock.set_for_testing(CLOCK_SET_TIMESTAMP * 2);
+            // timestamp is 2024, so 2024 * 2 = 4048
             let received_staking_receipt = scenario.take_from_sender<StakingReceipt>();
             let remained_staking_period = received_staking_receipt.staking_receipt_staking_remain_period(&clock);
-            assert_eq(remained_staking_period, EXPECTED_REMAINING_PERIOD);
+            assert_eq(remained_staking_period, ((2592000000 + CLOCK_SET_TIMESTAMP) - clock.timestamp_ms()));
             ts::return_to_sender(&scenario, received_staking_receipt);
             clock.destroy_for_testing(); 
         };
@@ -470,8 +540,8 @@ module e4c_staking::staking_tests {
         {
             let mut pool: GameLiquidityPool = scenario.take_shared();
             let config: StakingConfig = scenario.take_shared();
-            
-            let total_minted_e4c = coin::mint_for_testing<E4C>(coin_amount, scenario.ctx()); 
+            let minting_amount = coin_amount; 
+            let total_minted_e4c = coin::mint_for_testing<E4C>(minting_amount, scenario.ctx()); 
             let total_minted_value = total_minted_e4c.value<E4C>();
             let mut total_balance = coin::into_balance<E4C>(total_minted_e4c);
             let e4c_to_pool = coin::take(&mut total_balance, total_minted_value/10, scenario.ctx());

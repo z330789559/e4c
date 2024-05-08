@@ -6,6 +6,7 @@ module e4c_staking::config {
         clock::Clock,
         package,
         event,
+        math,
         vec_map::{Self, VecMap}
     };
 
@@ -19,7 +20,7 @@ module e4c_staking::config {
     // === Constants ===
     const MAX_U64: u64 = 18446744073709551615;
     const MAX_BPS: u16 = 10_000;
-
+    const E4C_DECIMALS: u64 = 100;
 
     // === Structs ===
 
@@ -62,6 +63,14 @@ module e4c_staking::config {
         removed_quantity_range_max: u64,
     }
 
+    // === Staking rules ===
+    // ============================================================
+    // | T (Staking Days) | APR (Annualized Percentage Rate) | Staking Quantity Range        | ROI (Return on Investment) |
+    // --------------------------------------------------------------------------------------------------------------------
+    // |  30              | 8%                               | 1 - 100 (including 100)       | 0.67%                      |              
+    // |  60              | 10%                              | 100 - 1000 (including 1000)   | 1.67%
+    // |  90              | 15%                              | 1000 - ∞  (more than 1000)    | 3.75%
+
     fun init(otw: CONFIG, ctx: &mut TxContext) {
         // staking config initialization
         let mut config = StakingConfig {
@@ -72,21 +81,21 @@ module e4c_staking::config {
         config.staking_rules.insert(30, StakingRule {
             staking_days: 30, // 30 days
             annualized_interest_rate_bp: 800, // 8%
-            staking_quantity_range_min: 1,
-            staking_quantity_range_max: 100,
+            staking_quantity_range_min: 99,
+            staking_quantity_range_max: 100 * E4C_DECIMALS,
         });
 
         config.staking_rules.insert(60, StakingRule {
             staking_days: 60, // 60 days
             annualized_interest_rate_bp: 1000, // 10%
-            staking_quantity_range_min: 100,
-            staking_quantity_range_max: 1000,
+            staking_quantity_range_min: 100 * E4C_DECIMALS,
+            staking_quantity_range_max: 1000 * E4C_DECIMALS,
         });
 
         config.staking_rules.insert(90, StakingRule {
             staking_days: 90, // 90 days
             annualized_interest_rate_bp: 1500, // 15%
-            staking_quantity_range_min: 1000,
+            staking_quantity_range_min: 1000 * E4C_DECIMALS,
             staking_quantity_range_max: MAX_U64,
         });
         
@@ -154,7 +163,7 @@ module e4c_staking::config {
     }
 
     // === Public-View Functions ===
-
+    // Reward simulation sheet : https://docs.google.com/spreadsheets/d/1ScREAb0ueIC8Ml5RaQTEtWzUgAWj28KUqBV16gdiF3U/edit?usp=sharing
     public fun staking_reward(
         config: &StakingConfig,
         staking_days: u64,
@@ -164,8 +173,15 @@ module e4c_staking::config {
         // Formula: reward = (N * T / 360 * amountE4C)
         // N = annualized interest rate in basis points
         // T = staking time in days
-        let reward = (((rule.annualized_interest_rate_bp as u64) * staking_days / 360) * staking_quantity) / 10_000;
-        reward as u64
+        let apr_multiply_with_staking_days = rule.annualized_interest_rate_bp as u64 * staking_days;
+        let divided_by_360 = math::divide_and_round_up(apr_multiply_with_staking_days, 360);
+        let reward = mul_div_round(divided_by_360, staking_quantity, 10_000);
+        reward
+    }
+    //Reference :https://github.com/CetusProtocol/integer-mate/blob/main/sui/sources/full_math_u64.move#L7-L10
+    public fun mul_div_round(num1: u64, num2: u64, denom: u64): u64 {
+        let r = (((num1 as u128) * (num2 as u128)) + ((denom as u128) >> 1)) / (denom as u128);
+        (r as u64)
     }
 
     public fun staking_quantity_range(
