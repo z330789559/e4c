@@ -165,19 +165,19 @@ module e4c_staking::config {
     }
 
     // Check if the new staking "quantity range" is overlapping with any existing range
-    fun is_amount_overlapping(config: &StakingConfig, new_amount_min: u64, new_amount_max: u64): bool {
+    fun is_amount_overlapping(config: &StakingConfig, new_min: u64, new_max: u64): bool {
         let keys = config.staking_rules.keys();
         let len = keys.length();
 
         let mut i: u64 = 0;
         while (i < len) {
             let existing_rule = config.staking_rules.get(keys.borrow(i));
-            if (new_amount_min < existing_rule.staking_quantity_range_max && 
-                new_amount_max > existing_rule.staking_quantity_range_min) {
+            if (new_min < existing_rule.staking_quantity_range_max && 
+                new_max > existing_rule.staking_quantity_range_min) {
                 return true
             };
 
-            if (new_amount_max < existing_rule.staking_quantity_range_min) {
+            if (new_max < existing_rule.staking_quantity_range_min) {
                 return false
             };
             i = i + 1;
@@ -222,10 +222,10 @@ module e4c_staking::config {
     #[test_only]
     public fun is_amount_overlapping_for_testing(
         config: &StakingConfig, 
-        new_amount_min: u64, 
-        new_amount_max: u64
+        new_min: u64, 
+        new_max: u64
     ): bool {
-        is_amount_overlapping(config, new_amount_min, new_amount_max)
+        is_amount_overlapping(config, new_min, new_max)
     }
 
     #[test_only]
