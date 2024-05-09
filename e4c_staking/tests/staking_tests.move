@@ -34,7 +34,7 @@ module e4c_staking::staking_tests {
     const BOB_BALANCE_FOR_ERROR_TESTING: u64 = 5_000 * E4C_DECIMALS;
     const BOB_STAKED_AMOUNT : u64 = 100 * E4C_DECIMALS;
     const BOB_STAKING_PERIOD: u64 = 30;
-    const ESTIMATED_REWARD_TO_BOB : u64 = 67;
+    const ESTIMATED_REWARD_TO_BOB : u64 = 670_000_000;
     const ESTIMATED_INTEREST_RATE_ON_30_DAYS: u16 = 800;
 
     const BOB_BALANCE_2: u64 = 3000 * E4C_DECIMALS;

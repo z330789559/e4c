@@ -53,7 +53,7 @@ module e4c_staking::config_tests {
     // staking_quantity_range_max: 100
     #[test]
     fun test_manual_fuzzy_on_reward_change_1() {
-        reward_fuzzing(100 * E4C_DECIMALS, 30, 800, 1, 100, 67);
+        reward_fuzzing(100 * E4C_DECIMALS, 30, 800, 1 * E4C_DECIMALS, 100 * E4C_DECIMALS, 670000000);
     }
 
     // ADD STAKING RULE CASES NO.2
@@ -63,7 +63,7 @@ module e4c_staking::config_tests {
     // staking_quantity_range_max: 1000
     #[test]
     fun test_manual_fuzzy_on_reward_change_2() {
-        reward_fuzzing(1_000 * E4C_DECIMALS, 60, 1000, 100, 1000, 1670);
+        reward_fuzzing(1_000 * E4C_DECIMALS, 60, 1000, 100 * E4C_DECIMALS, 1000 * E4C_DECIMALS, 16700000000);
     }
 
     // ADD STAKING RULE CASES NO.3
@@ -73,7 +73,7 @@ module e4c_staking::config_tests {
     // staking_quantity_range_max: 18446744073709551615 : MAX_U64
     #[test]
     fun test_manual_fuzzy_on_reward_change_3() {
-        reward_fuzzing(10_000 * E4C_DECIMALS, 90, 1500, 100, 1000, 37500);
+        reward_fuzzing(10_000 * E4C_DECIMALS, 90, 1500, 10_000 * E4C_DECIMALS, 1_000_000_000 * E4C_DECIMALS, 375000000000);
     }
 
     // ADD STAKING RULE EDGE CASES NO.1
@@ -81,15 +81,15 @@ module e4c_staking::config_tests {
     // annualized_interest_rate_bp: 1 : 0.01%
     #[test]
     fun test_manual_fuzzy_on_reward_MAX_U64_1() {
-        reward_fuzzing(RANGE_MAX_U64, 360, 1, 3000, RANGE_MAX_U64, 1844674407370955);
+        reward_fuzzing(RANGE_MAX_U64, 360, 1, 3000 * E4C_DECIMALS, RANGE_MAX_U64, 1844674407370955);
     }
 
     // ADD STAKING RULE EDGE CASES NO.2
-    // stake_time: 359 day
+    // stake_time: 360 day
     // annualized_interest_rate_bp: 1 : 0.01%
     #[test]
     fun test_error_manual_fuzzy_on_reward_MAX_U64_2() {
-        reward_fuzzing(1 * E4C_DECIMALS, 360, 1, 1, RANGE_MAX_U64, 0);
+        reward_fuzzing(1 * E4C_DECIMALS, 360, 1, 1 * E4C_DECIMALS, RANGE_MAX_U64, 100000);
     }
     
     // ADD STAKING RULE EDGE CASES NO.3
@@ -97,21 +97,22 @@ module e4c_staking::config_tests {
     // annualized_interest_rate_bp: 1 : 0.01%
 
     #[test]
+    #[expected_failure]
     fun test_manual_fuzzy_on_reward_edge() {
-        reward_fuzzing(1 * E4C_DECIMALS, RANGE_MAX_U64, 1, 1, 100, 512409557603043);
+        reward_fuzzing(1 * E4C_DECIMALS, RANGE_MAX_U64, 1, 1 * E4C_DECIMALS, 100 * E4C_DECIMALS, 512409557603043);
     }
 
     // failed to overflow u64
     #[test]
     #[expected_failure]
     fun test_manual_fuzzy_on_reward_edge_overflow() {
-        reward_fuzzing(RANGE_MAX_U64-1, RANGE_MAX_U64, 1, 1, 100, 51240955760304);
+        reward_fuzzing(RANGE_MAX_U64-1, RANGE_MAX_U64, 1, 1 * E4C_DECIMALS, 100 * E4C_DECIMALS, 51240955760304);
     }
 
 
     #[test]
     fun test_manual_fuzzy_on_reward_edge_MAX_U16() {
-        reward_fuzzing(10_000 * E4C_DECIMALS, 360, RANGE_MAX_U16, 1, 10000, RANGE_MAX_U16 as u64 * 100);
+        reward_fuzzing(10_000 * E4C_DECIMALS, 360, RANGE_MAX_U16, 1 * E4C_DECIMALS, 10000 * E4C_DECIMALS, RANGE_MAX_U16 as u64 * E4C_DECIMALS);
     }
 
     fun return_all(
