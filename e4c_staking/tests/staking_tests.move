@@ -13,7 +13,7 @@ module e4c_staking::staking_tests {
                         EStakingTimeNotEnded, EAmountMustBeGreaterThanZero, 
                         EAmountTooHigh, 
                         EStakingQuantityTooLow, EStakingQuantityTooHigh};
-    use e4c_staking::config::{AdminCap, StakingConfig};
+    use e4c_staking::config::{Self, AdminCap, StakingConfig};
     use e4c::e4c::E4C;
     
     const E4C_DECIMALS: u64 = 100;
@@ -552,7 +552,20 @@ module e4c_staking::staking_tests {
             balance::destroy_for_testing(total_balance);
             
         }
-        
+    }
+
+    #[test]
+    fun is_amount_overlapping() {
+        let mut scenario = ts::begin(@ambrus);
+        config::init_for_testing(scenario.ctx());
+        scenario.next_tx(@ambrus);
+        {
+            let staking_config: StakingConfig = scenario.take_shared();
+
+            assert_eq(config::is_amount_overlapping_for_testing(&staking_config, 1 * E4C_DECIMALS, 100 * E4C_DECIMALS), true);
+            ts::return_shared(staking_config);
+        };
+        scenario.end();
     }
 
     fun staking_processes(
