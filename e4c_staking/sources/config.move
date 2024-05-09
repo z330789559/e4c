@@ -81,7 +81,7 @@ module e4c_staking::config {
         config.staking_rules.insert(30, StakingRule {
             staking_days: 30, // 30 days
             annualized_interest_rate_bp: 800, // 8%
-            staking_quantity_range_min: 99 * E4C_DECIMALS,
+            staking_quantity_range_min: (E4C_DECIMALS - 1),
             staking_quantity_range_max: 100 * E4C_DECIMALS,
         });
 
@@ -174,14 +174,23 @@ module e4c_staking::config {
         // N = annualized interest rate in basis points
         // T = staking time in days
         let apr_multiply_with_staking_days = rule.annualized_interest_rate_bp as u64 * staking_days;
-        let divided_by_360 = math::divide_and_round_up(apr_multiply_with_staking_days, 360);
-        let reward = mul_div_round(divided_by_360, staking_quantity, 10_000);
+        let expected_roi = math::divide_and_round_up(apr_multiply_with_staking_days, 360);
+        let reward = mul_div_round(expected_roi, staking_quantity, 10_000);
         reward
     }
-    //Reference :https://github.com/CetusProtocol/integer-mate/blob/main/sui/sources/full_math_u64.move#L7-L10
+
     public fun mul_div_round(num1: u64, num2: u64, denom: u64): u64 {
-        let r = (((num1 as u128) * (num2 as u128)) + ((denom as u128) >> 1)) / (denom as u128);
-        (r as u64)
+        let half_divisor = (denom as u128 ) >> 1;
+        let dividend = (num1 as u128) * (num2 as u128);
+        let remainder = dividend % (denom as u128);
+        let quotient = dividend / (denom as u128);
+        
+        if (remainder >= half_divisor) {
+            let result: u128 = (quotient + 1);
+            (result as u64)
+        } else {
+            (quotient as u64)
+        }
     }
 
     public fun staking_quantity_range(
