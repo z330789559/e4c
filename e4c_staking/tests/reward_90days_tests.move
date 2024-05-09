@@ -13,9 +13,9 @@ module e4c_staking::reward_90_days_tests {
     use e4c_staking::staking_tests::{Self};
 
     // Simulation sheets : https://docs.google.com/spreadsheets/d/1ScREAb0ueIC8Ml5RaQTEtWzUgAWj28KUqBV16gdiF3U/edit?usp=sharing
+    // Delta from NO 18, No 20, Please take a look at the sheet for checking correct number of reward. 
    const E4C_DECIMALS: u64 = 1_000_000_000;
     const E4CTokenMaxSupply: u64 = 1_000_000_000 * E4C_DECIMALS;
-    const TEST_BALANCE: u64 = 100_000_000 * E4C_DECIMALS; // 100_000_000 E4C
 
     const SIMULATION_1_AMOUNT: u64 = 1000_287_590_176;
     const SIMULATION_1_EXPECTED_REWARD: u64 = 37_510_784_632;
