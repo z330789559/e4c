@@ -552,6 +552,7 @@ module e4c_staking::staking_tests {
             balance::destroy_for_testing(total_balance);
             
         }
+        
     }
 
     fun staking_processes(
