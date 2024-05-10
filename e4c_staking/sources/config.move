@@ -16,6 +16,7 @@ module e4c_staking::config {
     const EStakingTimeConflict: u64 = 2;
     const EStakingQuantityRangeUnmatch: u64 = 3;
     const EStakingTimeNotFound: u64 = 4;
+    const EStakingQuantityRangeConflict: u64 = 5;
 
     // === Constants ===
     const MAX_U64: u64 = 18446744073709551615;
@@ -126,6 +127,7 @@ module e4c_staking::config {
         assert!(annualized_interest_rate_bp <= MAX_BPS, EIncorrectBasisPoints);
         assert!(!config.staking_rules.contains(&staking_days), EStakingTimeConflict);
         assert!(staking_quantity_range_min < staking_quantity_range_max, EStakingQuantityRangeUnmatch);
+        assert!(!is_amount_overlapping(config, staking_quantity_range_min, staking_quantity_range_max), EStakingQuantityRangeConflict);
 
         config.staking_rules.insert(staking_days, StakingRule {
             staking_days,
@@ -203,6 +205,36 @@ module e4c_staking::config {
         rule: &StakingRule,
     ): u16 {
         rule.annualized_interest_rate_bp
+    }
+
+    // Check if the new staking "quantity range" is overlapping with any existing range
+    fun is_amount_overlapping(config: &StakingConfig, new_min: u64, new_max: u64): bool {
+        let keys = config.staking_rules.keys();
+        let len = keys.length();
+
+        let mut i: u64 = 0;
+        while (i < len) {
+            let existing_rule = config.staking_rules.get(keys.borrow(i));
+            if (new_min < existing_rule.staking_quantity_range_max && 
+                new_max > existing_rule.staking_quantity_range_min) {
+                return true
+            };
+
+            if (new_max < existing_rule.staking_quantity_range_min) {
+                return false
+            };
+            i = i + 1;
+        };
+        false
+    }
+
+    #[test_only]
+    public fun is_amount_overlapping_for_testing(
+        config: &StakingConfig, 
+        new_min: u64, 
+        new_max: u64
+    ): bool {
+        is_amount_overlapping(config, new_min, new_max)
     }
 
     #[test_only]
