@@ -577,6 +577,41 @@ module e4c_staking::staking_tests {
         scenario.end();
     }
 
+    #[test]
+    #[expected_failure(abort_code = EAmountTooHigh)]
+    fun test_empty_pool_failure_on_new_staking() {
+        let mut scenario = scenario();
+        let clock = clock::create_for_testing(scenario.ctx());
+        scenario.next_tx(@treasury);
+        {
+            staking::init_for_testing(scenario.ctx());
+        };
+        scenario.next_tx(@alice);
+        {
+            let amount = 10 * E4C_DECIMALS;
+            let mut balance = balance::create_for_testing(amount);
+            let stake = coin::take(&mut balance, amount, scenario.ctx());    
+            let mut pool: GameLiquidityPool = scenario.take_shared();
+            let staking_config: StakingConfig = scenario.take_shared();
+            
+            let receipt_obj = staking::new_staking_receipt(
+                stake, 
+                &mut pool, 
+                &clock,
+                &staking_config,
+                30,
+                scenario.ctx()
+            );
+
+            transfer::public_transfer(receipt_obj, @alice);
+            ts::return_shared(pool);
+            ts::return_shared(staking_config);
+            balance.destroy_for_testing();
+        };
+        clock::destroy_for_testing(clock);
+        scenario.end();
+    }
+
 
     #[test_only]
     fun set_up_initial_condition_for_testing(
