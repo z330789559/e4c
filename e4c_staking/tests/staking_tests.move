@@ -13,7 +13,7 @@ module e4c_staking::staking_tests {
                         EStakingTimeNotEnded, EAmountMustBeGreaterThanZero, 
                         EAmountTooHigh, 
                         EStakingQuantityTooLow, EStakingQuantityTooHigh};
-    use e4c_staking::config::{AdminCap, StakingConfig};
+    use e4c_staking::config::{AdminCap, StakingConfig, EStakingTimeNotFound};
     use e4c::e4c::E4C;
     
     const E4C_DECIMALS: u64 = 100;
@@ -522,6 +522,58 @@ module e4c_staking::staking_tests {
             scenario.return_to_sender(received_staking_receipt);
             clock::destroy_for_testing(clock); 
         };
+        scenario.end();
+    }
+
+    #[test]
+    #[expected_failure(abort_code = EStakingTimeNotFound)]
+    fun test_empty_config_failure_on_new_staking() {
+        let mut scenario = scenario();
+        let clock = clock::create_for_testing(scenario.ctx());
+        scenario.next_tx(@treasury);
+        {
+            set_up_initial_condition_for_testing(
+                &mut scenario,
+                @treasury,
+                MINTING_AMOUNT,
+            )
+        };
+        scenario.next_tx(@treasury);
+        {   
+            let mut staking_config: StakingConfig = scenario.take_shared();
+            let cap: AdminCap = scenario.take_from_sender();
+
+            // remove all staking rules
+            cap.remove_staking_rule(&mut staking_config, 30, &clock);
+            cap.remove_staking_rule(&mut staking_config, 60, &clock);
+            cap.remove_staking_rule(&mut staking_config, 90, &clock);
+
+            ts::return_shared(staking_config);
+            scenario.return_to_sender(cap);
+        };
+        scenario.next_tx(@alice);
+        {
+            let mut balance = balance::create_for_testing(10);
+            let stake = coin::take(&mut balance, 10, scenario.ctx());    
+            let mut pool: GameLiquidityPool = scenario.take_shared();
+            let staking_config: StakingConfig = scenario.take_shared();
+            
+            // Try to stake some token with empty staking config, this should be failed
+            let receipt_obj = staking::new_staking_receipt(
+                stake, 
+                &mut pool, 
+                &clock,
+                &staking_config,
+                30,
+                scenario.ctx()
+            );
+
+            transfer::public_transfer(receipt_obj, @alice);
+            ts::return_shared(pool);
+            ts::return_shared(staking_config);
+            balance.destroy_for_testing();
+        };
+        clock::destroy_for_testing(clock);
         scenario.end();
     }
 
