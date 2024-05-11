@@ -282,6 +282,8 @@ module e4c_staking::staking_tests {
             let clock = clock::create_for_testing(scenario.ctx());
             let cap: AdminCap = scenario.take_from_sender();
             
+            // delete 90 days staking rule to avoid amount overlapping error
+            cap.remove_staking_rule(&mut testing_staking_config, 90, &clock);
             cap.add_staking_rule(&mut testing_staking_config, 
                                     STRANGE_STAKING_PERIOD, 
                                     STRANGE_INTEREST, 

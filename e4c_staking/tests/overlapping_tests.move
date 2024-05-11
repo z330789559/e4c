@@ -7,7 +7,7 @@ module e4c_staking::overlapping_tests {
     };
     use e4c_staking::config::{Self, AdminCap, StakingConfig};
 
-    const E4C_DECIMALS: u64 = 100;
+    const E4C_DECIMALS: u64 = 1_000_000_000;
     const MAX_U64: u64 = 18446744073709551615;
 
     #[test]
