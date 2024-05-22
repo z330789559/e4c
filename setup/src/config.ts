@@ -5,7 +5,7 @@ const envConfig = config({ path: '.env' });
 
 // Load variables from .env.staking file
 const stakingEnvConfig = config({ path: '.env.staking' });
-
+console.log(stakingEnvConfig);
 // Define variables from .env
 export const SUI_NETWORK = stakingEnvConfig.parsed?.SUI_NETWORK!;
 export const GAME_LIQIUIDITY_POOL = stakingEnvConfig.parsed?.GAME_LIQUIDITY_POOL!;

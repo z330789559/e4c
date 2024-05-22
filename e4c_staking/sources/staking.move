@@ -129,10 +129,10 @@ module e4c_staking::staking {
         clock: &Clock,
         ctx: &mut TxContext
     ): Coin<E4C> {
-        assert!(
-            receipt.staking_end_at <= clock.timestamp_ms(),
-            EStakingTimeNotEnded
-        );
+        // assert!(
+        //     receipt.staking_end_at <= clock.timestamp_ms(),
+        //     EStakingTimeNotEnded
+        // );
 
         let StakingReceipt {
             id,

@@ -41,6 +41,7 @@ const COIN_SIZE = 10_000; // The size of a splitted E4C coin
 const E4C_COIN_TYPE = `0x2::coin::Coin<${E4C_PACKAGE}::e4c::E4C>`;
 
 // Derive addresses from the Mnemonic phrases
+console.log("ADMIN_PHRASE", PLAYER_PHRASE);
 let adminAddress = getSigner(ADMIN_PHRASE).getPublicKey().toSuiAddress();
 let playerAddress = getSigner(PLAYER_PHRASE).getPublicKey().toSuiAddress();
 
@@ -61,7 +62,7 @@ const splitCoins = async (numberOfCoins: number = 5) => {
 
     // getting all objects of type E4C 
     const E4CObjects = userObjects?.data?.filter((elem: any) => {
-        return elem?.data?.type === E4C_COIN_TYPE;
+        return elem?.data?.type === E4C_COIN_TYPE && elem?.data.content?.amount >= COIN_SIZE;
     });
 
     // get the first E4C coin
@@ -90,7 +91,7 @@ const splitCoins = async (numberOfCoins: number = 5) => {
 const topUpGamingPool = async () => {
 
     let tx = new TransactionBlock();
-
+console.log(adminAddress)
     // Get all objects owned by the admin address
     const userObjects = await client.getOwnedObjects({
         owner: adminAddress,
@@ -99,13 +100,13 @@ const topUpGamingPool = async () => {
         showType: true,
         },
     });
-    console.log(userObjects);
+
    
     // Filter the E4C coins
     const E4CObjects = userObjects?.data?.filter((elem: any) => {
-        return elem?.data?.type === E4C_COIN_TYPE;
+        return elem?.data?.type === E4C_COIN_TYPE && elem?.data?.content?.fields?.balance >= 200;
     });
-    
+    console.log(JSON.stringify(E4CObjects));
     const e4cCoin = E4CObjects[0].data?.objectId as string;
 
     tx.moveCall({
